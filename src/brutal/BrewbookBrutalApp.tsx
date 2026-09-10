@@ -1,5 +1,6 @@
 import React, { useEffect, useId, useMemo, useState } from 'react';
 import './v7-portrait-delete.css';
+import './v8-usability.css';
 import {
   ArrowLeft,
   ArrowRight,
@@ -38,7 +39,7 @@ import type {
   GrainBillItem,
   HopAddition,
 } from '../types/brewing';
-import { BJCP_STYLES, SIGNATURE_RECIPES, YEAST_DATABASE } from '../data/ingredients';
+import { BJCP_STYLES, GRAINS_DATABASE, HOPS_DATABASE, SIGNATURE_RECIPES, YEAST_DATABASE } from '../data/ingredients';
 import {
   brixToFinalGravity,
   calculateABV,
@@ -155,57 +156,53 @@ function Brand({ compact = false }: { compact?: boolean }) {
 function BeerPortrait({ recipe, compact = false }: { recipe: BeerRecipe; compact?: boolean }) {
   const calc = useMemo(() => calculateAllMetrics(recipe), [recipe]);
   const rawId = useId().replace(/:/g, '');
-  const clipId = `v7-bowl-${rawId}`;
-  const shineId = `v7-shine-${rawId}`;
+  const clipId = `v8-pint-${rawId}`;
+  const liquidId = `v8-liquid-${rawId}`;
   const color = srmToHex(calc.srm);
   const appearanceSource = `${recipe.style.name} ${recipe.style.category} ${recipe.style.appearance || ''} ${recipe.style.flavorProfile || ''}`.toLowerCase();
   const hazy = /hazy|new england|juicy|wit|weizen|wheat|hefe|keller|turv/.test(appearanceSource);
-  const veryDark = calc.srm >= 24;
-  const appearance = hazy ? 'tendência turva' : veryDark ? 'escura e pouco translúcida' : 'tendência límpida';
-  const hazeOpacity = hazy ? 0.25 : veryDark ? 0.08 : 0.035;
+  const tone = calc.srm < 3 ? 'palha clara' : calc.srm < 5 ? 'dourada clara' : calc.srm < 8 ? 'dourada' : calc.srm < 12 ? 'âmbar' : calc.srm < 18 ? 'cobre' : calc.srm < 25 ? 'marrom' : calc.srm < 40 ? 'marrom profunda' : 'preta profunda';
+  const clarity = hazy ? 'tendência turva pelo estilo' : calc.srm >= 30 ? 'baixa transparência pela cor' : 'tendência límpida';
+  const hazeOpacity = hazy ? 0.22 : calc.srm >= 30 ? 0.04 : 0.02;
 
   return (
-    <section className={`v7-beer-portrait ${compact ? 'v7-beer-portrait--compact' : ''}`} aria-label={`Retrato visual da receita ${recipe.name}`}>
-      <div className="v7-beer-portrait__visual">
-        <svg viewBox="0 0 240 320" role="img" aria-label={`Taça com cor estimada em ${calc.srm.toFixed(1)} SRM`}>
+    <section className={`v8-beer-sample ${compact ? 'v8-beer-sample--compact' : ''}`} aria-label={`Amostra visual da receita ${recipe.name}`}>
+      <div className="v8-beer-sample__glass">
+        <svg viewBox="0 0 220 286" role="img" aria-label={`Copo com cor estimada em ${calc.srm.toFixed(1)} SRM`}>
           <defs>
             <clipPath id={clipId}>
-              <path d="M49 35 Q55 139 77 202 Q85 225 120 231 Q155 225 163 202 Q185 139 191 35 Z" />
+              <path d="M48 28 L172 28 L160 220 Q157 242 110 247 Q63 242 60 220 Z" />
             </clipPath>
-            <linearGradient id={shineId} x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0" stopColor="#ffffff" stopOpacity=".04" />
-              <stop offset=".24" stopColor="#ffffff" stopOpacity=".32" />
-              <stop offset=".42" stopColor="#ffffff" stopOpacity=".06" />
-              <stop offset="1" stopColor="#ffffff" stopOpacity=".02" />
+            <linearGradient id={liquidId} x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stopColor="#000" stopOpacity=".18" />
+              <stop offset=".23" stopColor="#fff" stopOpacity=".14" />
+              <stop offset=".52" stopColor="#fff" stopOpacity=".02" />
+              <stop offset="1" stopColor="#000" stopOpacity=".24" />
             </linearGradient>
           </defs>
-
           <g clipPath={`url(#${clipId})`}>
-            <rect x="42" y="66" width="156" height="170" fill={color} />
-            <rect x="42" y="66" width="156" height="170" fill="#f4dfaf" opacity={hazeOpacity} />
-            <rect x="42" y="66" width="156" height="170" fill={`url(#${shineId})`} />
-            <ellipse cx="120" cy="68" rx="69" ry="13" fill="#f8efd8" opacity=".96" />
-            <ellipse cx="92" cy="65" rx="26" ry="13" fill="#fff8e9" />
-            <ellipse cx="132" cy="61" rx="31" ry="15" fill="#fff7e4" />
-            <ellipse cx="164" cy="67" rx="22" ry="11" fill="#f5ead0" />
-            <g fill="#fff7df" opacity=".72">
-              <circle cx="83" cy="174" r="2.2" /><circle cx="107" cy="151" r="1.7" /><circle cx="142" cy="187" r="2" />
-              <circle cx="157" cy="131" r="1.5" /><circle cx="124" cy="112" r="1.3" /><circle cx="94" cy="202" r="1.4" />
+            <rect x="42" y="66" width="136" height="190" fill={color} />
+            <rect x="42" y="66" width="136" height="190" fill="#f4dfaf" opacity={hazeOpacity} />
+            <rect x="42" y="66" width="136" height="190" fill={`url(#${liquidId})`} />
+            <path d="M45 66 Q72 55 96 65 T142 63 T178 67 L178 88 Q154 82 132 88 T86 86 T45 88 Z" fill="#fff1ce" opacity=".98" />
+            <path d="M52 69 Q74 61 91 68 T126 66 T166 69" fill="none" stroke="#fff9e9" strokeWidth="12" strokeLinecap="round" opacity=".88" />
+            <g fill="#fff7df" opacity=".42">
+              <circle cx="80" cy="181" r="2" /><circle cx="103" cy="158" r="1.5" /><circle cx="139" cy="201" r="1.8" /><circle cx="151" cy="132" r="1.3" />
             </g>
           </g>
-
-          <path d="M49 35 Q55 139 77 202 Q85 225 120 231 Q155 225 163 202 Q185 139 191 35" fill="none" stroke="#f8edd7" strokeWidth="4" opacity=".8" />
-          <path d="M49 35 Q120 49 191 35" fill="none" stroke="#fff7e5" strokeWidth="5" opacity=".72" />
-          <path d="M120 231 L120 271" stroke="#f7ead1" strokeWidth="6" opacity=".74" />
-          <ellipse cx="120" cy="281" rx="50" ry="9" fill="none" stroke="#f7ead1" strokeWidth="5" opacity=".65" />
-          <path d="M73 54 Q67 130 84 188" fill="none" stroke="#fff" strokeWidth="8" strokeLinecap="round" opacity=".18" />
+          <path d="M48 28 L60 220 Q63 242 110 247 Q157 242 160 220 L172 28" fill="none" stroke="#f6ead3" strokeWidth="4" opacity=".82" />
+          <path d="M48 28 Q110 39 172 28" fill="none" stroke="#fff7e6" strokeWidth="5" opacity=".72" />
+          <path d="M66 54 Q62 145 75 204" fill="none" stroke="#fff" strokeWidth="8" strokeLinecap="round" opacity=".16" />
+          <ellipse cx="110" cy="251" rx="49" ry="8" fill="none" stroke="#f2e4ca" strokeWidth="3" opacity=".42" />
         </svg>
       </div>
-      <div className="v7-beer-portrait__copy">
-        <span>RETRATO DA CERVEJA</span>
-        <h3>{calc.srm.toFixed(1)} <small>SRM</small></h3>
-        <p><b>{appearance}</b> · faixa do estilo {recipe.style.srmMin}–{recipe.style.srmMax} SRM.</p>
-        <small>Cor calculada pela receita. Turbidez, espuma e transparência reais dependem do processo e do copo.</small>
+      <div className="v8-beer-sample__copy">
+        <span>COR DA RECEITA</span>
+        <div className="v8-beer-sample__value"><strong>{calc.srm.toFixed(1)}</strong><small>SRM</small></div>
+        <h3>{tone}</h3>
+        <p>{clarity}</p>
+        <div className="v8-beer-sample__style-range"><i style={{ background: color }} /><span>Estilo: {recipe.style.srmMin}–{recipe.style.srmMax} SRM</span></div>
+        <small>Cor estimada pelos grãos. Espuma e transparência reais dependem do processo.</small>
       </div>
     </section>
   );
@@ -412,7 +409,60 @@ function RecipeEditor({
   onStartBrew: () => void;
 }) {
   const [step, setStep] = useState<RecipeStep>(0);
+  const [grainPickerOpen, setGrainPickerOpen] = useState(false);
+  const [grainSearch, setGrainSearch] = useState('');
+  const [hopPickerOpen, setHopPickerOpen] = useState(false);
+  const [hopSearch, setHopSearch] = useState('');
   const calc = useMemo(() => calculateAllMetrics(recipe), [recipe]);
+
+  const filteredGrains = useMemo(() => {
+    const query = grainSearch.trim().toLowerCase();
+    const source = query
+      ? GRAINS_DATABASE.filter((item) => `${item.name} ${item.origin} ${item.type} ${(item.sensoryNotes || []).join(' ')}`.toLowerCase().includes(query))
+      : GRAINS_DATABASE;
+    return source.slice(0, 18);
+  }, [grainSearch]);
+
+  const filteredHops = useMemo(() => {
+    const query = hopSearch.trim().toLowerCase();
+    const source = query
+      ? HOPS_DATABASE.filter((item) => `${item.name} ${item.origin} ${item.profile} ${(item.sensoryNotes || []).join(' ')}`.toLowerCase().includes(query))
+      : HOPS_DATABASE;
+    return source.slice(0, 18);
+  }, [hopSearch]);
+
+  const addGrainFromCatalog = (item: (typeof GRAINS_DATABASE)[number]) => {
+    onChange({
+      ...recipe,
+      grains: [...recipe.grains, {
+        id: uid('grain'),
+        name: item.name,
+        amountKg: item.type === 'Base' ? 1 : 0.25,
+        potentialSg: item.potentialSg,
+        ebc: item.ebc,
+        type: item.type,
+      }],
+    });
+    setGrainPickerOpen(false);
+    setGrainSearch('');
+  };
+
+  const addHopFromCatalog = (item: (typeof HOPS_DATABASE)[number]) => {
+    onChange({
+      ...recipe,
+      hops: [...recipe.hops, {
+        id: uid('hop'),
+        name: item.name,
+        amountGrams: 25,
+        alphaAcids: item.alphaAcids,
+        timeMinutes: 10,
+        use: 'Boil',
+        form: 'Pellet',
+      }],
+    });
+    setHopPickerOpen(false);
+    setHopSearch('');
+  };
 
   const updateGrain = (id: string, patch: Partial<GrainBillItem>) => {
     onChange({ ...recipe, grains: recipe.grains.map((grain) => grain.id === id ? { ...grain, ...patch } : grain) });
@@ -470,7 +520,27 @@ function RecipeEditor({
                 </div>
               ))}
             </div>
-            <button className="v6-add" onClick={() => onChange({ ...recipe, grains: [...recipe.grains, { id: uid('grain'), name: 'Novo malte', amountKg: 0.5, potentialSg: 1.036, ebc: 5, type: 'Base' }] })}><Plus /> Adicionar malte</button>
+            <div className="v8-add-actions">
+              <button className="v6-add" onClick={() => { setGrainPickerOpen((value) => !value); setHopPickerOpen(false); }}><Search /> Escolher malte</button>
+              <button className="v8-custom-add" onClick={() => onChange({ ...recipe, grains: [...recipe.grains, { id: uid('grain'), name: 'Malte personalizado', amountKg: 0.5, potentialSg: 1.036, ebc: 5, type: 'Base' }] })}><Plus /> Personalizado</button>
+            </div>
+            {grainPickerOpen && (
+              <section className="v8-picker" aria-label="Catálogo de maltes">
+                <header><div><span>CATÁLOGO DE MALTES</span><strong>Escolha a matéria-prima</strong></div><button onClick={() => setGrainPickerOpen(false)} aria-label="Fechar catálogo"><X /></button></header>
+                <label className="v8-picker__search"><Search /><input autoFocus value={grainSearch} onChange={(e) => setGrainSearch(e.target.value)} placeholder="Buscar Pilsen, Munich, trigo, chocolate, Agrária..." /></label>
+                <div className="v8-picker__grid">
+                  {filteredGrains.map((item) => (
+                    <button key={item.name} className="v8-picker__item" onClick={() => addGrainFromCatalog(item)}>
+                      <strong>{item.name}</strong>
+                      <span>{item.origin} · {item.type} · {item.ebc} EBC</span>
+                      <small>{(item.sensoryNotes || []).slice(0, 3).join(' · ') || item.notes}</small>
+                      {item.maxUsagePercent && <em>uso sugerido até {item.maxUsagePercent}%</em>}
+                    </button>
+                  ))}
+                </div>
+                {!filteredGrains.length && <p className="v8-picker__empty">Nenhum malte encontrado. Tente outro nome.</p>}
+              </section>
+            )}
             <div className="v6-total"><span>Total de grãos</span><strong>{calc.totalGrainKg.toFixed(2)} kg</strong></div>
           </div>
         )}
@@ -497,7 +567,27 @@ function RecipeEditor({
                 </div>
               ))}
             </div>
-            <button className="v6-add" onClick={() => onChange({ ...recipe, hops: [...recipe.hops, { id: uid('hop'), name: 'Novo lúpulo', amountGrams: 20, alphaAcids: 10, timeMinutes: 10, use: 'Boil', form: 'Pellet' }] })}><Plus /> Adicionar lúpulo</button>
+            <div className="v8-add-actions">
+              <button className="v6-add" onClick={() => { setHopPickerOpen((value) => !value); setGrainPickerOpen(false); }}><Search /> Escolher lúpulo</button>
+              <button className="v8-custom-add" onClick={() => onChange({ ...recipe, hops: [...recipe.hops, { id: uid('hop'), name: 'Lúpulo personalizado', amountGrams: 20, alphaAcids: 10, timeMinutes: 10, use: 'Boil', form: 'Pellet' }] })}><Plus /> Personalizado</button>
+            </div>
+            {hopPickerOpen && (
+              <section className="v8-picker" aria-label="Catálogo de lúpulos">
+                <header><div><span>CATÁLOGO DE LÚPULOS</span><strong>Escolha pelo perfil</strong></div><button onClick={() => setHopPickerOpen(false)} aria-label="Fechar catálogo"><X /></button></header>
+                <label className="v8-picker__search"><Search /><input autoFocus value={hopSearch} onChange={(e) => setHopSearch(e.target.value)} placeholder="Buscar Citra, Mosaic, Saaz, Hallertau, Brasil..." /></label>
+                <div className="v8-picker__grid">
+                  {filteredHops.map((item) => (
+                    <button key={item.name} className="v8-picker__item" onClick={() => addHopFromCatalog(item)}>
+                      <strong>{item.name}</strong>
+                      <span>{item.origin} · α {item.alphaAcids}%</span>
+                      <small>{(item.sensoryNotes || []).slice(0, 3).join(' · ') || item.profile}</small>
+                      <em>entra com 25 g · 10 min; ajuste depois</em>
+                    </button>
+                  ))}
+                </div>
+                {!filteredHops.length && <p className="v8-picker__empty">Nenhum lúpulo encontrado. Tente outro nome.</p>}
+              </section>
+            )}
             <div className="v6-total"><span>Total de lúpulo</span><strong>{calc.totalHopsGrams.toFixed(0)} g</strong></div>
           </div>
         )}
