@@ -87,7 +87,7 @@ export const AppShell: React.FC<AppShellProps> = ({
             <DemocrataLogo size="custom" customSizePx={44} variant="circular" />
             <span className="v4-brand__wordmark">
               <strong>Democrata</strong>
-              <small>Bier · desde 2014</small>
+              <small>Bier · receitas & brassagens</small>
             </span>
           </button>
 
@@ -215,4 +215,3 @@ export const AppShell: React.FC<AppShellProps> = ({
     </div>
   );
 };
-
