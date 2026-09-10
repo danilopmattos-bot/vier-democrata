@@ -1,0 +1,32 @@
+name: Apply V7 portrait and notebook patch
+
+on:
+  push:
+    branches: [portrait-delete-v7]
+    paths:
+      - 'scripts/apply_v7.py'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: portrait-delete-v7
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply V7 patch
+        run: python scripts/apply_v7.py
+      - name: Commit result
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm scripts/apply_v7.py .github/workflows/apply-v7.yml
+          git add src/brutal/BrewbookBrutalApp.tsx src/brutal/v7-portrait-delete.css
+          git commit -m "Add authorial beer portrait and safe notebook deletion"
+          git push origin HEAD:portrait-delete-v7
