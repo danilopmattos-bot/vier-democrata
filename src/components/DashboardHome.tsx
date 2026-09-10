@@ -12,7 +12,7 @@ import {
   Sparkles,
   Wheat,
 } from 'lucide-react';
-import { BeerRecipe, RecipeCalculations } from '../types/brewing';
+import { BeerRecipe, BrewSession, RecipeCalculations } from '../types/brewing';
 import { DemocrataLogo } from './DemocrataLogo';
 import { HeroBeerStage } from './HeroBeerStage';
 import breweryScene from '../assets/images/brewmaster_cinematic_1787487688648.jpg';
@@ -20,6 +20,7 @@ import breweryScene from '../assets/images/brewmaster_cinematic_1787487688648.jp
 interface DashboardHomeProps {
   currentRecipe: BeerRecipe;
   recipes: BeerRecipe[];
+  brewSessions: BrewSession[];
   calculations: RecipeCalculations;
   onSelectRecipe: (id: string) => void;
   onOpenRecipe: () => void;
@@ -74,6 +75,7 @@ const QuickAction = ({
 export const DashboardHome: React.FC<DashboardHomeProps> = ({
   currentRecipe,
   recipes,
+  brewSessions,
   calculations,
   onSelectRecipe,
   onOpenRecipe,
@@ -83,6 +85,14 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
   onNewRecipe,
   onCloneRecipe,
 }) => {
+  const complianceEntries = Object.entries(calculations.bjcpCompliance)
+    .filter(([key]) => key !== 'score') as Array<[string, 'low' | 'ok' | 'high']>;
+  const outsideStyle = complianceEntries.filter(([, status]) => status !== 'ok');
+  const styleSummary = outsideStyle.length === 0
+    ? 'Dentro do estilo'
+    : `${outsideStyle.length} ${outsideStyle.length === 1 ? 'medida pede' : 'medidas pedem'} atenção`;
+  const lastSession = [...brewSessions].sort((a, b) => b.brewedAt.localeCompare(a.brewedAt))[0];
+
   return (
     <div className="space-y-5 sm:space-y-7">
       <section className="brew-hero relative isolate min-h-[610px] overflow-hidden rounded-[30px] border border-white/[0.09] bg-[#100c08] shadow-[0_35px_120px_rgba(0,0,0,0.52)] sm:rounded-[38px] lg:min-h-[590px]">
@@ -112,7 +122,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
 
             <div className="max-w-[680px]">
               <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/[0.16] bg-amber-300/[0.07] px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-amber-200">
-                <Sparkles className="h-3.5 w-3.5" /> Caderno de receitas & brassagens
+                <Sparkles className="h-3.5 w-3.5" /> {styleSummary}
               </span>
 
               <h1 className="mt-5 max-w-[650px] font-serif text-[2.7rem] font-black leading-[0.94] tracking-[-0.05em] text-[#fff8eb] sm:text-[4rem] lg:text-[4.45rem] xl:text-[4.9rem]">
@@ -161,11 +171,30 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
         </div>
       </section>
 
-      <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
         <Metric label="Densidade inicial" value={calculations.og.toFixed(3)} detail="OG prevista" />
         <Metric label="Densidade final" value={calculations.fg.toFixed(3)} detail="FG prevista" />
         <Metric label="Álcool" value={`${calculations.abv.toFixed(1)}%`} detail="ABV estimado" />
         <Metric label="Amargor" value={`${Math.round(calculations.ibu)} IBU`} detail="Receita atual" />
+        <Metric label="Cor" value={`${calculations.srm.toFixed(1)} SRM`} detail="Estimativa visual" />
+        <Metric label="Volume" value={`${currentRecipe.batchSizeLiters} L`} detail="Lote planejado" />
+      </section>
+
+      <section className="grid gap-3 md:grid-cols-2">
+        <article className="rounded-[24px] border border-amber-300/[0.14] bg-amber-300/[0.055] p-5">
+          <p className="text-[9px] font-black uppercase tracking-[0.22em] text-amber-300/70">Próxima ação útil</p>
+          <h2 className="mt-2 font-serif text-xl font-black text-[#fff7e7]">Revise a receita antes de aquecer a água</h2>
+          <p className="mt-2 text-xs leading-5 text-stone-500">Confira ingredientes, volumes e os limites BJCP; depois abra o modo brassagem.</p>
+          <button type="button" onClick={onOpenRecipe} className="mt-4 inline-flex items-center gap-2 text-xs font-black text-amber-200">Continuar receita <ArrowRight className="h-4 w-4" /></button>
+        </article>
+        <article className="rounded-[24px] border border-white/[0.08] bg-[#14100c] p-5">
+          <p className="text-[9px] font-black uppercase tracking-[0.22em] text-stone-600">Última brassagem</p>
+          {lastSession ? (
+            <><h2 className="mt-2 font-serif text-xl font-black text-[#fff7e7]">{lastSession.recipeName}</h2><p className="mt-2 text-xs text-stone-500">{lastSession.brewedAt} · {lastSession.status}</p></>
+          ) : (
+            <><h2 className="mt-2 font-serif text-xl font-black text-[#fff7e7]">Nenhum lote registrado</h2><p className="mt-2 text-xs leading-5 text-stone-500">Suas receitas foram preservadas. O histórico de lotes será preenchido quando o acompanhamento V4 estiver disponível.</p></>
+          )}
+        </article>
       </section>
 
       <section className="grid grid-cols-1 gap-5 xl:grid-cols-[1.18fr_.82fr]">
@@ -208,7 +237,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
                 <BookOpen className="h-4 w-4" /> Editar receita
               </button>
               <button type="button" onClick={onCloneRecipe} className="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.035] px-4 py-2.5 text-xs font-bold text-stone-300 transition-all hover:border-white/[0.14] hover:text-white">
-                <Copy className="h-4 w-4" /> Fazer uma cópia
+                <Copy className="h-4 w-4" /> Fazer novamente
               </button>
             </div>
           </div>

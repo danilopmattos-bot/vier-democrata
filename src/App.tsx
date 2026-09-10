@@ -24,9 +24,7 @@ import { PrivateGate } from './components/PrivateGate';
 import { triggerRecipeCreationSpark } from './utils/dopamineEffects';
 import { Sparkles } from 'lucide-react';
 import { BJCPStyle } from './types/brewing';
-
-const STORAGE_KEY = 'democrata_craft_recipes_v1';
-const CUSTOM_STYLES_KEY = 'democrata_custom_styles_v1';
+import { loadBrewSessions, loadRecipes, readStoredArray, STORAGE_KEYS } from './utils/localStorage';
 
 export const App: React.FC = () => {
   // Gate check
@@ -36,16 +34,7 @@ export const App: React.FC = () => {
 
   // Load saved custom styles
   const [customStyles, setCustomStyles] = useState<BJCPStyle[]>(() => {
-    const saved = localStorage.getItem(CUSTOM_STYLES_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
-      } catch (e) {
-        console.error('Failed to parse saved custom styles', e);
-      }
-    }
-    return [];
+    return readStoredArray<BJCPStyle>(STORAGE_KEYS.customStyles, []);
   });
 
   // Combine default BJCP styles with user's custom styles
@@ -55,17 +44,11 @@ export const App: React.FC = () => {
 
   // Load recipes from LocalStorage or fall back to SIGNATURE_RECIPES
   const [recipes, setRecipes] = useState<BeerRecipe[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch (e) {
-        console.error('Failed to parse saved recipes', e);
-      }
-    }
-    return SIGNATURE_RECIPES;
+    return loadRecipes(SIGNATURE_RECIPES);
   });
+
+  // Read-only in Phase 1: later phases will create and update brew sessions.
+  const [brewSessions] = useState(loadBrewSessions);
 
   const [activeRecipeId, setActiveRecipeId] = useState<string>(recipes[0]?.id || SIGNATURE_RECIPES[0].id);
 
@@ -96,7 +79,7 @@ export const App: React.FC = () => {
 
   // Persist recipes to LocalStorage on changes
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
+    localStorage.setItem(STORAGE_KEYS.recipes, JSON.stringify(recipes));
   }, [recipes]);
 
   // Recipe Update Handlers
@@ -246,7 +229,7 @@ export const App: React.FC = () => {
       } else {
         updated = [newStyle, ...prev];
       }
-      localStorage.setItem(CUSTOM_STYLES_KEY, JSON.stringify(updated));
+      localStorage.setItem(STORAGE_KEYS.customStyles, JSON.stringify(updated));
       return updated;
     });
 
@@ -301,6 +284,7 @@ export const App: React.FC = () => {
           <DashboardHome
             currentRecipe={currentRecipe}
             recipes={recipes}
+            brewSessions={brewSessions}
             calculations={calculations}
             onSelectRecipe={setActiveRecipeId}
             onOpenRecipe={() => setActiveTab('architect')}

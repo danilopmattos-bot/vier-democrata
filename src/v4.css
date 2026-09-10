@@ -1,11 +1,18 @@
-/* Democrata Bier V3 — cinematic craft brewery layer */
+/* Democrata Bier V4 — authorial foundation and design tokens */
 
 :root {
+  color-scheme: dark;
   --brew-ink: #080604;
   --brew-panel: #14100c;
+  --brew-panel-raised: #1a1510;
+  --brew-line: rgba(255, 247, 231, 0.08);
   --brew-cream: #fff7e7;
+  --brew-muted: #8f877d;
   --brew-gold: #f3cf7a;
   --brew-copper: #b86821;
+  --brew-hop: #75834b;
+  --brew-radius-card: 1.5rem;
+  --brew-shadow-card: 0 24px 70px rgba(0, 0, 0, 0.24);
 }
 
 .brew-hero {

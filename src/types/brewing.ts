@@ -132,6 +132,26 @@ export interface BeerRecipe {
   createdAt: string;
 }
 
+/** Foundation for separating an immutable brew record from its source recipe.
+ * Brewday and fermentation will populate these fields in later V4 phases.
+ */
+export interface BrewSession {
+  id: string;
+  recipeId: string;
+  recipeName: string;
+  brewedAt: string;
+  status: 'planned' | 'brewing' | 'fermenting' | 'packaged' | 'completed';
+  actuals?: {
+    originalGravity?: number;
+    finalGravity?: number;
+    abv?: number;
+    efficiencyPercent?: number;
+  };
+  notes?: string;
+  rating?: 1 | 2 | 3 | 4 | 5;
+  wouldBrewAgain?: boolean;
+}
+
 export interface RecipeCalculations {
   og: number;
   fg: number;
