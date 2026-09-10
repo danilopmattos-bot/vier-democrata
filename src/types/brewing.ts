@@ -6,8 +6,8 @@ export interface GrainBillItem {
   id: string;
   name: string;
   amountKg: number;
-  potentialSg: number; // e.g. 1.037
-  ebc: number; // Color in EBC
+  potentialSg: number;
+  ebc: number;
   type: GrainType;
   percentage?: number;
 }
@@ -16,11 +16,11 @@ export interface HopAddition {
   id: string;
   name: string;
   amountGrams: number;
-  alphaAcids: number; // e.g. 12.5%
-  timeMinutes: number; // e.g. 60, 15, 0 (knockout), or days for dry hop
+  alphaAcids: number;
+  timeMinutes: number;
   use: HopUse;
   form: HopForm;
-  tempCelsius?: number; // e.g. 80C for whirlpool
+  tempCelsius?: number;
 }
 
 export interface YeastProfile {
@@ -29,11 +29,11 @@ export interface YeastProfile {
   brand: string;
   strain: string;
   type: 'Ale' | 'Lager' | 'Kveik' | 'Wheat' | 'Belgian' | 'Sour/Wild';
-  attenuationAvg: number; // e.g. 78%
-  optimalTempMin: number; // e.g. 18C
-  optimalTempMax: number; // e.g. 22C
+  attenuationAvg: number;
+  optimalTempMin: number;
+  optimalTempMax: number;
   flocculation: 'Low' | 'Medium' | 'High' | 'Very High';
-  alcoholTolerance: number; // e.g. 11%
+  alcoholTolerance: number;
   notes: string;
 }
 
@@ -41,12 +41,12 @@ export interface WaterProfile {
   id?: string;
   name: string;
   description?: string;
-  calcium: number;    // Ca (ppm)
-  magnesium: number;  // Mg (ppm)
-  sodium: number;     // Na (ppm)
-  chloride: number;   // Cl (ppm)
-  sulfate: number;    // SO4 (ppm)
-  bicarbonate: number;// HCO3 (ppm)
+  calcium: number;
+  magnesium: number;
+  sodium: number;
+  chloride: number;
+  sulfate: number;
+  bicarbonate: number;
   ph?: number;
   residualAlkalinity?: number;
   sourceType?: 'Sanepar Curitiba' | 'Manancial' | 'Osmose Reversa' | 'Histórico Mundial' | 'Perfil Alvo';
@@ -54,12 +54,12 @@ export interface WaterProfile {
 }
 
 export interface WaterSalts {
-  gypsumGrams: number;        // CaSO4
-  calciumChlorideGrams: number; // CaCl2
-  epsomSaltGrams: number;     // MgSO4
-  tableSaltGrams: number;     // NaCl
-  bakingSodaGrams: number;    // NaHCO3
-  lacticAcid88Ml: number;     // Acid for pH mash adjust
+  gypsumGrams: number;
+  calciumChlorideGrams: number;
+  epsomSaltGrams: number;
+  tableSaltGrams: number;
+  bakingSodaGrams: number;
+  lacticAcid88Ml: number;
 }
 
 export interface MashStep {
@@ -132,24 +132,78 @@ export interface BeerRecipe {
   createdAt: string;
 }
 
-/** Foundation for separating an immutable brew record from its source recipe.
- * Brewday and fermentation will populate these fields in later V4 phases.
+export type BrewSessionStatus = 'planned' | 'brewing' | 'fermenting' | 'packaged' | 'completed';
+export type BrewStepStatus = 'pending' | 'active' | 'done';
+
+export interface BrewStepRecord {
+  id: string;
+  name: string;
+  status: BrewStepStatus;
+  targetTempCelsius?: number;
+  durationMinutes?: number;
+  startedAt?: string;
+  completedAt?: string;
+}
+
+export interface BrewReading {
+  id: string;
+  recordedAt: string;
+  kind: 'preBoilGravity' | 'preBoilVolume' | 'postBoilVolume' | 'originalGravity' | 'finalGravity' | 'pitchTemperature' | 'mashPh' | 'temperature' | 'note';
+  label: string;
+  value: number | string;
+  unit?: string;
+}
+
+export interface FermentationReading {
+  id: string;
+  recordedAt: string;
+  gravity?: number;
+  tempCelsius?: number;
+  note?: string;
+}
+
+/**
+ * A BrewSession is a real batch. The recipe remains the plan; this record stores
+ * what actually happened. New fields are optional so V3/V4 browser data remains
+ * readable without migration.
  */
 export interface BrewSession {
   id: string;
   recipeId: string;
   recipeName: string;
   brewedAt: string;
-  status: 'planned' | 'brewing' | 'fermenting' | 'packaged' | 'completed';
+  updatedAt?: string;
+  status: BrewSessionStatus;
+  currentStepIndex?: number;
+  steps?: BrewStepRecord[];
+  readings?: BrewReading[];
+  fermentationReadings?: FermentationReading[];
+  planned?: {
+    originalGravity?: number;
+    finalGravity?: number;
+    abv?: number;
+    ibu?: number;
+    srm?: number;
+    efficiencyPercent?: number;
+    batchSizeLiters?: number;
+    styleCode?: string;
+    styleName?: string;
+  };
   actuals?: {
+    preBoilGravity?: number;
+    preBoilVolumeLiters?: number;
+    postBoilVolumeLiters?: number;
     originalGravity?: number;
     finalGravity?: number;
     abv?: number;
     efficiencyPercent?: number;
+    pitchTempCelsius?: number;
+    mashPh?: number;
   };
   notes?: string;
   rating?: 1 | 2 | 3 | 4 | 5;
   wouldBrewAgain?: boolean;
+  packagedAt?: string;
 }
 
 export interface RecipeCalculations {
@@ -200,7 +254,7 @@ export interface RecipeCalculations {
     abvStatus: 'low' | 'ok' | 'high';
     ibuStatus: 'low' | 'ok' | 'high';
     srmStatus: 'low' | 'ok' | 'high';
-    score: number; // 0 - 100%
+    score: number;
   };
 }
 
