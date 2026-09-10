@@ -1,0 +1,340 @@
+name: Apply V8 usability fixes
+
+on:
+  push:
+    branches: [ingredient-picker-v8]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.event.head_commit.message != 'Apply V8 usability fixes'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ingredient-picker-v8
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply V8 patch
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/brutal/BrewbookBrutalApp.tsx')
+          s = path.read_text()
+
+          s = s.replace("import './v7-portrait-delete.css';", "import './v7-portrait-delete.css';\nimport './v8-usability.css';")
+          s = s.replace(
+              "import { BJCP_STYLES, SIGNATURE_RECIPES, YEAST_DATABASE } from '../data/ingredients';",
+              "import { BJCP_STYLES, GRAINS_DATABASE, HOPS_DATABASE, SIGNATURE_RECIPES, YEAST_DATABASE } from '../data/ingredients';"
+          )
+
+          portrait_start = s.index('function BeerPortrait(')
+          portrait_end = s.index('\nfunction AccessGate', portrait_start)
+          new_portrait = r'''function BeerPortrait({ recipe, compact = false }: { recipe: BeerRecipe; compact?: boolean }) {
+            const calc = useMemo(() => calculateAllMetrics(recipe), [recipe]);
+            const rawId = useId().replace(/:/g, '');
+            const clipId = `v8-pint-${rawId}`;
+            const liquidId = `v8-liquid-${rawId}`;
+            const color = srmToHex(calc.srm);
+            const appearanceSource = `${recipe.style.name} ${recipe.style.category} ${recipe.style.appearance || ''} ${recipe.style.flavorProfile || ''}`.toLowerCase();
+            const hazy = /hazy|new england|juicy|wit|weizen|wheat|hefe|keller|turv/.test(appearanceSource);
+            const tone = calc.srm < 3 ? 'palha clara' : calc.srm < 5 ? 'dourada clara' : calc.srm < 8 ? 'dourada' : calc.srm < 12 ? 'âmbar' : calc.srm < 18 ? 'cobre' : calc.srm < 25 ? 'marrom' : calc.srm < 40 ? 'marrom profunda' : 'preta profunda';
+            const clarity = hazy ? 'tendência turva pelo estilo' : calc.srm >= 30 ? 'baixa transparência pela cor' : 'tendência límpida';
+            const hazeOpacity = hazy ? 0.22 : calc.srm >= 30 ? 0.04 : 0.02;
+
+            return (
+              <section className={`v8-beer-sample ${compact ? 'v8-beer-sample--compact' : ''}`} aria-label={`Amostra visual da receita ${recipe.name}`}>
+                <div className="v8-beer-sample__glass">
+                  <svg viewBox="0 0 220 286" role="img" aria-label={`Copo com cor estimada em ${calc.srm.toFixed(1)} SRM`}>
+                    <defs>
+                      <clipPath id={clipId}>
+                        <path d="M48 28 L172 28 L160 220 Q157 242 110 247 Q63 242 60 220 Z" />
+                      </clipPath>
+                      <linearGradient id={liquidId} x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0" stopColor="#000" stopOpacity=".18" />
+                        <stop offset=".23" stopColor="#fff" stopOpacity=".14" />
+                        <stop offset=".52" stopColor="#fff" stopOpacity=".02" />
+                        <stop offset="1" stopColor="#000" stopOpacity=".24" />
+                      </linearGradient>
+                    </defs>
+                    <g clipPath={`url(#${clipId})`}>
+                      <rect x="42" y="66" width="136" height="190" fill={color} />
+                      <rect x="42" y="66" width="136" height="190" fill="#f4dfaf" opacity={hazeOpacity} />
+                      <rect x="42" y="66" width="136" height="190" fill={`url(#${liquidId})`} />
+                      <path d="M45 66 Q72 55 96 65 T142 63 T178 67 L178 88 Q154 82 132 88 T86 86 T45 88 Z" fill="#fff1ce" opacity=".98" />
+                      <path d="M52 69 Q74 61 91 68 T126 66 T166 69" fill="none" stroke="#fff9e9" strokeWidth="12" strokeLinecap="round" opacity=".88" />
+                      <g fill="#fff7df" opacity=".42">
+                        <circle cx="80" cy="181" r="2" /><circle cx="103" cy="158" r="1.5" /><circle cx="139" cy="201" r="1.8" /><circle cx="151" cy="132" r="1.3" />
+                      </g>
+                    </g>
+                    <path d="M48 28 L60 220 Q63 242 110 247 Q157 242 160 220 L172 28" fill="none" stroke="#f6ead3" strokeWidth="4" opacity=".82" />
+                    <path d="M48 28 Q110 39 172 28" fill="none" stroke="#fff7e6" strokeWidth="5" opacity=".72" />
+                    <path d="M66 54 Q62 145 75 204" fill="none" stroke="#fff" strokeWidth="8" strokeLinecap="round" opacity=".16" />
+                    <ellipse cx="110" cy="251" rx="49" ry="8" fill="none" stroke="#f2e4ca" strokeWidth="3" opacity=".42" />
+                  </svg>
+                </div>
+                <div className="v8-beer-sample__copy">
+                  <span>COR DA RECEITA</span>
+                  <div className="v8-beer-sample__value"><strong>{calc.srm.toFixed(1)}</strong><small>SRM</small></div>
+                  <h3>{tone}</h3>
+                  <p>{clarity}</p>
+                  <div className="v8-beer-sample__style-range"><i style={{ background: color }} /><span>Estilo: {recipe.style.srmMin}–{recipe.style.srmMax} SRM</span></div>
+                  <small>Cor estimada pelos grãos. Espuma e transparência reais dependem do processo.</small>
+                </div>
+              </section>
+            );
+          }
+'''
+          s = s[:portrait_start] + new_portrait + s[portrait_end:]
+
+          state_needle = "  const [step, setStep] = useState<RecipeStep>(0);\n  const calc = useMemo(() => calculateAllMetrics(recipe), [recipe]);"
+          state_replacement = r'''  const [step, setStep] = useState<RecipeStep>(0);
+            const [grainPickerOpen, setGrainPickerOpen] = useState(false);
+            const [grainSearch, setGrainSearch] = useState('');
+            const [hopPickerOpen, setHopPickerOpen] = useState(false);
+            const [hopSearch, setHopSearch] = useState('');
+            const calc = useMemo(() => calculateAllMetrics(recipe), [recipe]);
+
+            const filteredGrains = useMemo(() => {
+              const query = grainSearch.trim().toLowerCase();
+              const source = query
+                ? GRAINS_DATABASE.filter((item) => `${item.name} ${item.origin} ${item.type} ${(item.sensoryNotes || []).join(' ')}`.toLowerCase().includes(query))
+                : GRAINS_DATABASE;
+              return source.slice(0, 18);
+            }, [grainSearch]);
+
+            const filteredHops = useMemo(() => {
+              const query = hopSearch.trim().toLowerCase();
+              const source = query
+                ? HOPS_DATABASE.filter((item) => `${item.name} ${item.origin} ${item.profile} ${(item.sensoryNotes || []).join(' ')}`.toLowerCase().includes(query))
+                : HOPS_DATABASE;
+              return source.slice(0, 18);
+            }, [hopSearch]);
+
+            const addGrainFromCatalog = (item: (typeof GRAINS_DATABASE)[number]) => {
+              onChange({
+                ...recipe,
+                grains: [...recipe.grains, {
+                  id: uid('grain'),
+                  name: item.name,
+                  amountKg: item.type === 'Base' ? 1 : 0.25,
+                  potentialSg: item.potentialSg,
+                  ebc: item.ebc,
+                  type: item.type,
+                }],
+              });
+              setGrainPickerOpen(false);
+              setGrainSearch('');
+            };
+
+            const addHopFromCatalog = (item: (typeof HOPS_DATABASE)[number]) => {
+              onChange({
+                ...recipe,
+                hops: [...recipe.hops, {
+                  id: uid('hop'),
+                  name: item.name,
+                  amountGrams: 25,
+                  alphaAcids: item.alphaAcids,
+                  timeMinutes: 10,
+                  use: 'Boil',
+                  form: 'Pellet',
+                }],
+              });
+              setHopPickerOpen(false);
+              setHopSearch('');
+            };'''
+          if state_needle not in s:
+              raise SystemExit('RecipeEditor state needle not found')
+          s = s.replace(state_needle, state_replacement, 1)
+
+          grain_old = """            <button className=\"v6-add\" onClick={() => onChange({ ...recipe, grains: [...recipe.grains, { id: uid('grain'), name: 'Novo malte', amountKg: 0.5, potentialSg: 1.036, ebc: 5, type: 'Base' }] })}><Plus /> Adicionar malte</button>"""
+          grain_new = r'''            <div className="v8-add-actions">
+              <button className="v6-add" onClick={() => { setGrainPickerOpen((value) => !value); setHopPickerOpen(false); }}><Search /> Escolher malte</button>
+              <button className="v8-custom-add" onClick={() => onChange({ ...recipe, grains: [...recipe.grains, { id: uid('grain'), name: 'Malte personalizado', amountKg: 0.5, potentialSg: 1.036, ebc: 5, type: 'Base' }] })}><Plus /> Personalizado</button>
+            </div>
+            {grainPickerOpen && (
+              <section className="v8-picker" aria-label="Catálogo de maltes">
+                <header><div><span>CATÁLOGO DE MALTES</span><strong>Escolha a matéria-prima</strong></div><button onClick={() => setGrainPickerOpen(false)} aria-label="Fechar catálogo"><X /></button></header>
+                <label className="v8-picker__search"><Search /><input autoFocus value={grainSearch} onChange={(e) => setGrainSearch(e.target.value)} placeholder="Buscar Pilsen, Munich, trigo, chocolate, Agrária..." /></label>
+                <div className="v8-picker__grid">
+                  {filteredGrains.map((item) => (
+                    <button key={item.name} className="v8-picker__item" onClick={() => addGrainFromCatalog(item)}>
+                      <strong>{item.name}</strong>
+                      <span>{item.origin} · {item.type} · {item.ebc} EBC</span>
+                      <small>{(item.sensoryNotes || []).slice(0, 3).join(' · ') || item.notes}</small>
+                      {item.maxUsagePercent && <em>uso sugerido até {item.maxUsagePercent}%</em>}
+                    </button>
+                  ))}
+                </div>
+                {!filteredGrains.length && <p className="v8-picker__empty">Nenhum malte encontrado. Tente outro nome.</p>}
+              </section>
+            )}'''
+          if grain_old not in s:
+              raise SystemExit('Grain button needle not found')
+          s = s.replace(grain_old, grain_new, 1)
+
+          hop_old = """            <button className=\"v6-add\" onClick={() => onChange({ ...recipe, hops: [...recipe.hops, { id: uid('hop'), name: 'Novo lúpulo', amountGrams: 20, alphaAcids: 10, timeMinutes: 10, use: 'Boil', form: 'Pellet' }] })}><Plus /> Adicionar lúpulo</button>"""
+          hop_new = r'''            <div className="v8-add-actions">
+              <button className="v6-add" onClick={() => { setHopPickerOpen((value) => !value); setGrainPickerOpen(false); }}><Search /> Escolher lúpulo</button>
+              <button className="v8-custom-add" onClick={() => onChange({ ...recipe, hops: [...recipe.hops, { id: uid('hop'), name: 'Lúpulo personalizado', amountGrams: 20, alphaAcids: 10, timeMinutes: 10, use: 'Boil', form: 'Pellet' }] })}><Plus /> Personalizado</button>
+            </div>
+            {hopPickerOpen && (
+              <section className="v8-picker" aria-label="Catálogo de lúpulos">
+                <header><div><span>CATÁLOGO DE LÚPULOS</span><strong>Escolha pelo perfil</strong></div><button onClick={() => setHopPickerOpen(false)} aria-label="Fechar catálogo"><X /></button></header>
+                <label className="v8-picker__search"><Search /><input autoFocus value={hopSearch} onChange={(e) => setHopSearch(e.target.value)} placeholder="Buscar Citra, Mosaic, Saaz, Hallertau, Brasil..." /></label>
+                <div className="v8-picker__grid">
+                  {filteredHops.map((item) => (
+                    <button key={item.name} className="v8-picker__item" onClick={() => addHopFromCatalog(item)}>
+                      <strong>{item.name}</strong>
+                      <span>{item.origin} · α {item.alphaAcids}%</span>
+                      <small>{(item.sensoryNotes || []).slice(0, 3).join(' · ') || item.profile}</small>
+                      <em>entra com 25 g · 10 min; ajuste depois</em>
+                    </button>
+                  ))}
+                </div>
+                {!filteredHops.length && <p className="v8-picker__empty">Nenhum lúpulo encontrado. Tente outro nome.</p>}
+              </section>
+            )}'''
+          if hop_old not in s:
+              raise SystemExit('Hop button needle not found')
+          s = s.replace(hop_old, hop_new, 1)
+
+          path.write_text(s)
+
+          css = r'''/* V8 — corrected notebook, authorial color sample and ingredient catalog */
+
+/* Fix the inherited grid-area rules that made saved recipe text overlap. */
+.v7-recipe-row { min-height: 86px; align-items: stretch; }
+.v7-recipe-row__open {
+  grid-template-areas: none !important;
+  grid-auto-flow: row !important;
+  align-content: center !important;
+  min-height: 86px !important;
+  overflow: hidden;
+}
+.v7-recipe-row__open > strong,
+.v7-recipe-row__open > small {
+  grid-area: auto !important;
+  position: static !important;
+  inset: auto !important;
+  width: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+}
+.v7-recipe-row__open > strong {
+  display: block !important;
+  line-height: 1.18 !important;
+  font-size: 1.02rem !important;
+  overflow-wrap: anywhere;
+}
+.v7-recipe-row__open > small {
+  display: block !important;
+  margin-top: 6px !important;
+  line-height: 1.35 !important;
+  font-size: .78rem !important;
+}
+.v7-recipe-row__delete svg { grid-area: auto !important; }
+
+/* Beer sample: not a dashboard card, but a small brewery color proof. */
+.v8-beer-sample {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(118px, 150px) minmax(145px, 1fr);
+  gap: 20px;
+  align-items: center;
+  width: min(100%, 390px);
+  min-height: 292px;
+  padding: 20px 22px 20px 16px;
+  background: linear-gradient(135deg, rgba(13,10,7,.84), rgba(13,10,7,.66));
+  border: 1px solid rgba(255,246,223,.18);
+  border-radius: 2px;
+  box-shadow: 0 24px 72px rgba(0,0,0,.28);
+  backdrop-filter: blur(8px);
+}
+.v8-beer-sample::before {
+  content: '';
+  position: absolute;
+  inset: 12px auto 12px 0;
+  width: 3px;
+  background: linear-gradient(var(--v6-copper-hot), rgba(240,131,63,.08));
+}
+.v8-beer-sample__glass { min-width: 0; display: grid; place-items: center; }
+.v8-beer-sample__glass svg { display: block; width: 100%; max-width: 150px; height: auto; filter: drop-shadow(0 18px 18px rgba(0,0,0,.34)); }
+.v8-beer-sample__copy { min-width: 0; display: grid; gap: 6px; align-content: center; }
+.v8-beer-sample__copy > span { font: 800 .72rem/1.2 var(--v6-mono); letter-spacing: .14em; color: var(--v6-copper-hot); }
+.v8-beer-sample__value { display: flex; align-items: baseline; gap: 7px; margin-top: 2px; }
+.v8-beer-sample__value strong { font: 400 2rem/.95 var(--v6-serif); color: var(--v6-cream); }
+.v8-beer-sample__value small { font: 900 .72rem var(--v6-mono); color: var(--v6-amber); }
+.v8-beer-sample__copy h3 { margin: 0; font: 400 1.36rem/1.15 var(--v6-serif); color: var(--v6-cream); text-transform: capitalize; }
+.v8-beer-sample__copy p { margin: 0; color: #d7c9b4; font-size: .86rem; line-height: 1.4; }
+.v8-beer-sample__copy > small { color: #a99d8c; font-size: .72rem; line-height: 1.45; }
+.v8-beer-sample__style-range { display: flex; align-items: center; gap: 9px; margin: 4px 0 2px; color: #e7d8bf; font-size: .76rem; }
+.v8-beer-sample__style-range i { width: 28px; height: 12px; border: 1px solid rgba(255,255,255,.22); box-shadow: inset 0 0 0 1px rgba(0,0,0,.18); }
+.v8-beer-sample--compact { width: 100%; min-height: 176px; grid-template-columns: 88px 1fr; gap: 13px; padding: 12px 14px 12px 10px; margin: 0 0 22px; background: rgba(239,225,193,.045); }
+.v8-beer-sample--compact .v8-beer-sample__glass svg { max-width: 86px; }
+.v8-beer-sample--compact .v8-beer-sample__value strong { font-size: 1.55rem; }
+.v8-beer-sample--compact .v8-beer-sample__copy h3 { font-size: 1.05rem; }
+.v8-beer-sample--compact .v8-beer-sample__copy p { font-size: .76rem; }
+.v8-beer-sample--compact .v8-beer-sample__copy > small { display: none; }
+
+/* Ingredient catalog */
+.v8-add-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.v8-add-actions .v6-add { margin: 0; background: var(--v6-ink); color: var(--v6-paper); border-color: var(--v6-ink); min-height: 56px; }
+.v8-custom-add { min-height: 56px; border: 1px solid rgba(26,19,14,.32); background: transparent; color: var(--v6-ink); padding: 0 18px; display: flex; align-items: center; gap: 8px; font-weight: 900; }
+.v8-custom-add svg { width: 19px; }
+.v8-picker { margin: 18px 0 28px; border: 1px solid rgba(26,19,14,.28); background: #f7ecd2; box-shadow: 0 20px 54px rgba(74,48,28,.10); }
+.v8-picker > header { min-height: 74px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; gap: 18px; border-bottom: 1px solid rgba(26,19,14,.16); background: #ead7b1; }
+.v8-picker > header > div { display: grid; gap: 3px; }
+.v8-picker > header span { font: 800 .7rem var(--v6-mono); letter-spacing: .13em; color: #8e4826; }
+.v8-picker > header strong { font: 400 1.3rem var(--v6-serif); }
+.v8-picker > header button { width: 46px; height: 46px; border: 0; background: transparent; color: var(--v6-ink); display: grid; place-items: center; }
+.v8-picker__search { margin: 16px 18px; min-height: 56px; display: grid; grid-template-columns: 26px 1fr; align-items: center; gap: 10px; padding: 0 14px; border: 1px solid rgba(26,19,14,.24); background: #fff8e8; }
+.v8-picker__search svg { width: 20px; color: #875237; }
+.v8-picker__search input { width: 100%; min-height: 54px; border: 0; outline: 0; background: transparent; color: var(--v6-ink); font-size: 1rem; }
+.v8-picker__grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); max-height: 460px; overflow: auto; border-top: 1px solid rgba(26,19,14,.14); }
+.v8-picker__item { min-height: 122px; padding: 16px 18px; border: 0; border-right: 1px solid rgba(26,19,14,.13); border-bottom: 1px solid rgba(26,19,14,.13); background: transparent; color: var(--v6-ink); display: grid; align-content: center; gap: 5px; text-align: left; transition: .15s ease; }
+.v8-picker__item:nth-child(even) { border-right: 0; }
+.v8-picker__item:hover { background: #dfc18c; transform: translateY(-1px); }
+.v8-picker__item strong { font: 400 1.08rem/1.18 var(--v6-serif); }
+.v8-picker__item span { font: 800 .69rem/1.25 var(--v6-mono); color: #855139; }
+.v8-picker__item small { color: #665746; font-size: .78rem; line-height: 1.35; }
+.v8-picker__item em { color: #7b6a54; font-size: .68rem; font-style: normal; }
+.v8-picker__empty { margin: 0; padding: 20px; color: #665746; }
+
+@media (max-width: 1180px) {
+  .v8-beer-sample { width: 320px; grid-template-columns: 105px 1fr; min-height: 250px; }
+  .v8-beer-sample__glass svg { max-width: 108px; }
+}
+
+@media (max-width: 900px) {
+  .v8-beer-sample { width: min(100%, 620px); max-width: 620px; min-height: 230px; grid-template-columns: 118px 1fr; }
+  .v8-picker__grid { grid-template-columns: 1fr; }
+  .v8-picker__item { border-right: 0; }
+}
+
+@media (max-width: 620px) {
+  .v8-beer-sample { grid-template-columns: 96px 1fr; gap: 12px; padding: 14px 14px 14px 9px; min-height: 210px; }
+  .v8-beer-sample__glass svg { max-width: 90px; }
+  .v8-beer-sample__copy > small { display: none; }
+  .v8-add-actions { display: grid; grid-template-columns: 1fr; }
+  .v8-add-actions > button { width: 100%; }
+  .v8-picker { margin-left: -10px; margin-right: -10px; }
+  .v7-recipe-row__open > strong { font-size: .96rem !important; }
+}
+'''
+          Path('src/brutal/v8-usability.css').write_text(css)
+          PY
+      - name: Remove patch workflow and commit result
+        shell: bash
+        run: |
+          rm .github/workflows/apply-v8.yml
+          git config user.name "danilopmattos-bot"
+          git config user.email "danilopmattos@hotmail.com"
+          git add src/brutal/BrewbookBrutalApp.tsx src/brutal/v8-usability.css .github/workflows/apply-v8.yml
+          git commit -m "Apply V8 usability fixes"
+          git push origin ingredient-picker-v8
