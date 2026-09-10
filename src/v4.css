@@ -19,6 +19,37 @@
   --brew-shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
 }
 
+/* Access gate utilities remain deliberately quiet so the gate belongs to the
+   same workshop language as the authenticated shell. */
+.brew-noise {
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.28'/%3E%3C/svg%3E");
+  mix-blend-mode: soft-light;
+}
+
+.brew-gold-text {
+  color: var(--brew-amber);
+}
+
+.brew-primary-button {
+  border: 1px solid rgba(255, 225, 165, .32);
+  color: #211507;
+  background: linear-gradient(135deg, #f0bd63, var(--brew-copper));
+  box-shadow: 0 12px 30px rgba(146, 79, 24, .26), inset 0 1px rgba(255, 246, 215, .55);
+  transition: transform 160ms ease, filter 160ms ease, box-shadow 160ms ease;
+}
+
+.brew-primary-button:hover {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+  box-shadow: 0 15px 34px rgba(146, 79, 24, .34), inset 0 1px rgba(255, 246, 215, .65);
+}
+
+.brew-primary-button:focus-visible {
+  outline: 2px solid var(--brew-cream);
+  outline-offset: 3px;
+}
+
 .v4-shell {
   min-height: 100vh;
   color: var(--brew-cream);
