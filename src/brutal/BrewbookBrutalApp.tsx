@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useId, useMemo, useState } from 'react';
+import './v7-portrait-delete.css';
 import {
   ArrowLeft,
   ArrowRight,
@@ -23,6 +24,7 @@ import {
   ShieldCheck,
   Star,
   Thermometer,
+  Trash2,
   TriangleAlert,
   Wheat,
   X,
@@ -43,6 +45,7 @@ import {
   calculateAllMetrics,
   calculatePrimingSugar,
   calculateYeastPitch,
+  srmToHex,
 } from '../utils/brewingCalculations';
 import {
   loadBrewSessions,
@@ -146,6 +149,65 @@ function Brand({ compact = false }: { compact?: boolean }) {
         <small>BREWBOOK</small>
       </span>
     </div>
+  );
+}
+
+function BeerPortrait({ recipe, compact = false }: { recipe: BeerRecipe; compact?: boolean }) {
+  const calc = useMemo(() => calculateAllMetrics(recipe), [recipe]);
+  const rawId = useId().replace(/:/g, '');
+  const clipId = `v7-bowl-${rawId}`;
+  const shineId = `v7-shine-${rawId}`;
+  const color = srmToHex(calc.srm);
+  const appearanceSource = `${recipe.style.name} ${recipe.style.category} ${recipe.style.appearance || ''} ${recipe.style.flavorProfile || ''}`.toLowerCase();
+  const hazy = /hazy|new england|juicy|wit|weizen|wheat|hefe|keller|turv/.test(appearanceSource);
+  const veryDark = calc.srm >= 24;
+  const appearance = hazy ? 'tendência turva' : veryDark ? 'escura e pouco translúcida' : 'tendência límpida';
+  const hazeOpacity = hazy ? 0.25 : veryDark ? 0.08 : 0.035;
+
+  return (
+    <section className={`v7-beer-portrait ${compact ? 'v7-beer-portrait--compact' : ''}`} aria-label={`Retrato visual da receita ${recipe.name}`}>
+      <div className="v7-beer-portrait__visual">
+        <svg viewBox="0 0 240 320" role="img" aria-label={`Taça com cor estimada em ${calc.srm.toFixed(1)} SRM`}>
+          <defs>
+            <clipPath id={clipId}>
+              <path d="M49 35 Q55 139 77 202 Q85 225 120 231 Q155 225 163 202 Q185 139 191 35 Z" />
+            </clipPath>
+            <linearGradient id={shineId} x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stopColor="#ffffff" stopOpacity=".04" />
+              <stop offset=".24" stopColor="#ffffff" stopOpacity=".32" />
+              <stop offset=".42" stopColor="#ffffff" stopOpacity=".06" />
+              <stop offset="1" stopColor="#ffffff" stopOpacity=".02" />
+            </linearGradient>
+          </defs>
+
+          <g clipPath={`url(#${clipId})`}>
+            <rect x="42" y="66" width="156" height="170" fill={color} />
+            <rect x="42" y="66" width="156" height="170" fill="#f4dfaf" opacity={hazeOpacity} />
+            <rect x="42" y="66" width="156" height="170" fill={`url(#${shineId})`} />
+            <ellipse cx="120" cy="68" rx="69" ry="13" fill="#f8efd8" opacity=".96" />
+            <ellipse cx="92" cy="65" rx="26" ry="13" fill="#fff8e9" />
+            <ellipse cx="132" cy="61" rx="31" ry="15" fill="#fff7e4" />
+            <ellipse cx="164" cy="67" rx="22" ry="11" fill="#f5ead0" />
+            <g fill="#fff7df" opacity=".72">
+              <circle cx="83" cy="174" r="2.2" /><circle cx="107" cy="151" r="1.7" /><circle cx="142" cy="187" r="2" />
+              <circle cx="157" cy="131" r="1.5" /><circle cx="124" cy="112" r="1.3" /><circle cx="94" cy="202" r="1.4" />
+            </g>
+          </g>
+
+          <path d="M49 35 Q55 139 77 202 Q85 225 120 231 Q155 225 163 202 Q185 139 191 35" fill="none" stroke="#f8edd7" strokeWidth="4" opacity=".8" />
+          <path d="M49 35 Q120 49 191 35" fill="none" stroke="#fff7e5" strokeWidth="5" opacity=".72" />
+          <path d="M120 231 L120 271" stroke="#f7ead1" strokeWidth="6" opacity=".74" />
+          <ellipse cx="120" cy="281" rx="50" ry="9" fill="none" stroke="#f7ead1" strokeWidth="5" opacity=".65" />
+          <path d="M73 54 Q67 130 84 188" fill="none" stroke="#fff" strokeWidth="8" strokeLinecap="round" opacity=".18" />
+        </svg>
+      </div>
+      <div className="v7-beer-portrait__copy">
+        <span>RETRATO DA CERVEJA</span>
+        <h3>{calc.srm.toFixed(1)} <small>SRM</small></h3>
+        <p><b>{appearance}</b> · faixa do estilo {recipe.style.srmMin}–{recipe.style.srmMax} SRM.</p>
+        <small>Cor calculada pela receita. Turbidez, espuma e transparência reais dependem do processo e do copo.</small>
+      </div>
+    </section>
   );
 }
 
@@ -264,10 +326,13 @@ function Home({
     <main className="v6-home">
       <img src="/brewmaster.jpg" alt="" className="v6-home__photo" />
       <div className="v6-home__shade" />
-      <section className="v6-home__hero">
-        <p className="v6-kicker">DEMOCRATA BIER · CADERNO DA CASA</p>
-        <h1>O próximo lote<br />não começa no software.<br /><em>Começa numa decisão.</em></h1>
-        <p>Planeje com referência. Brasse com atenção. Registre o que aconteceu. Faça a próxima melhor.</p>
+      <section className="v7-home-stage">
+        <div className="v6-home__hero">
+          <p className="v6-kicker">DEMOCRATA BIER · CADERNO DA CASA</p>
+          <h1>O próximo lote<br />não começa no software.<br /><em>Começa numa decisão.</em></h1>
+          <p>Planeje com referência. Brasse com atenção. Registre o que aconteceu. Faça a próxima melhor.</p>
+        </div>
+        <BeerPortrait recipe={recipe} />
       </section>
 
       <section className="v6-paths" aria-label="Ações principais">
@@ -316,6 +381,7 @@ function StyleRail({ recipe }: { recipe: BeerRecipe }) {
 
   return (
     <aside className="v6-style-rail">
+      <BeerPortrait recipe={recipe} compact />
       <p className="v6-kicker">REFERÊNCIA BJCP</p>
       <div className="v6-style-rail__name"><b>{recipe.style.code}</b><h2>{recipe.style.name}</h2></div>
       <p>{recipe.style.flavorProfile}</p>
@@ -634,42 +700,106 @@ function BrewMode({
 function Notebook({
   sessions,
   onSessions,
+  recipes,
+  onRecipes,
+  activeRecipeId,
+  onSelectRecipe,
 }: {
   sessions: BrewSession[];
   onSessions: (sessions: BrewSession[]) => void;
+  recipes: BeerRecipe[];
+  onRecipes: (recipes: BeerRecipe[]) => void;
+  activeRecipeId: string;
+  onSelectRecipe: (id: string) => void;
 }) {
   const [selectedId, setSelectedId] = useState(sessions[0]?.id || '');
   const selected = sessions.find((item) => item.id === selectedId) || sessions[0];
   const sameRecipe = selected ? sessions.filter((item) => item.recipeId === selected.recipeId).sort((a, b) => b.brewedAt.localeCompare(a.brewedAt)) : [];
+
+  useEffect(() => {
+    if (selectedId && !sessions.some((item) => item.id === selectedId)) {
+      setSelectedId(sessions[0]?.id || '');
+    }
+  }, [selectedId, sessions]);
 
   const update = (patch: Partial<BrewSession>) => {
     if (!selected) return;
     onSessions(sessions.map((item) => item.id === selected.id ? { ...item, ...patch, updatedAt: new Date().toISOString() } : item));
   };
 
+  const deleteLot = () => {
+    if (!selected) return;
+    const ok = window.confirm(`Apagar o lote de ${selected.recipeName} de ${selected.brewedAt}?\n\nEsta ação remove somente este lote do Caderno.`);
+    if (!ok) return;
+    const next = sessions.filter((item) => item.id !== selected.id);
+    onSessions(next);
+    setSelectedId(next[0]?.id || '');
+  };
+
+  const deleteRecipe = (recipeToDelete: BeerRecipe) => {
+    if (recipes.length <= 1) {
+      window.alert('Mantenha pelo menos uma receita no Brewbook. Crie outra antes de apagar esta.');
+      return;
+    }
+    const linkedLots = sessions.filter((item) => item.recipeId === recipeToDelete.id).length;
+    const lotText = linkedLots
+      ? `\n\n${linkedLots} lote${linkedLots === 1 ? '' : 's'} histórico${linkedLots === 1 ? '' : 's'} desta receita continuará${linkedLots === 1 ? '' : 'ão'} no Caderno.`
+      : '\n\nNenhum lote histórico será afetado.';
+    const ok = window.confirm(`Apagar a receita "${recipeToDelete.name}"?${lotText}\n\nA receita não poderá ser recuperada depois.`);
+    if (!ok) return;
+    const next = recipes.filter((item) => item.id !== recipeToDelete.id);
+    onRecipes(next);
+    if (activeRecipeId === recipeToDelete.id) onSelectRecipe(next[0].id);
+  };
+
   const actualAbv = selected?.actuals?.originalGravity && selected?.actuals?.finalGravity
     ? calculateABV(selected.actuals.originalGravity, selected.actuals.finalGravity)
     : selected?.actuals?.abv;
-
-  if (!sessions.length) {
-    return <main className="v6-empty"><NotebookPen /><p className="v6-kicker">CADERNO DEMOCRATA</p><h1>Ainda não existe lote real.</h1><p>Comece uma brassagem. O primeiro registro aparece aqui automaticamente.</p></main>;
-  }
 
   return (
     <main className="v6-notebook">
       <aside className="v6-batch-list">
         <p className="v6-kicker">LOTES</p>
         <h1>Caderno</h1>
-        {sessions.map((item) => (
+        {sessions.length ? sessions.map((item) => (
           <button key={item.id} data-active={item.id === selected?.id || undefined} onClick={() => setSelectedId(item.id)}>
             <span>{item.brewedAt}</span><strong>{item.recipeName}</strong><small>{item.status}</small><ChevronRight />
           </button>
-        ))}
+        )) : <p className="v7-empty-lots">Ainda não há brassagens registradas.</p>}
+
+        <section className="v7-recipe-shelf">
+          <header><div><p className="v6-kicker">RECEITAS SALVAS</p><h2>Arquivo de receitas</h2></div><span>{recipes.length}</span></header>
+          <div className="v7-recipe-shelf__list">
+            {recipes.map((savedRecipe) => {
+              const lotCount = sessions.filter((item) => item.recipeId === savedRecipe.id).length;
+              const isActive = savedRecipe.id === activeRecipeId;
+              return (
+                <div className="v7-recipe-row" key={savedRecipe.id} data-active={isActive || undefined}>
+                  <button className="v7-recipe-row__open" onClick={() => onSelectRecipe(savedRecipe.id)}>
+                    <strong>{savedRecipe.name}</strong>
+                    <small>{savedRecipe.style.code} · {lotCount} lote{lotCount === 1 ? '' : 's'}{isActive ? ' · aberta agora' : ''}</small>
+                  </button>
+                  <button
+                    className="v7-recipe-row__delete"
+                    onClick={() => deleteRecipe(savedRecipe)}
+                    disabled={recipes.length <= 1}
+                    aria-label={`Apagar receita ${savedRecipe.name}`}
+                    title={recipes.length <= 1 ? 'Crie outra receita antes de apagar a última.' : 'Apagar receita'}
+                  ><Trash2 /></button>
+                </div>
+              );
+            })}
+          </div>
+          <p className="v7-recipe-shelf__note">Apagar uma receita não apaga os lotes antigos. O histórico continua guardado no Caderno.</p>
+        </section>
       </aside>
-      {selected && (
+
+      {selected ? (
         <article className="v6-batch-page">
-          <p className="v6-kicker">LOTE REAL · {selected.brewedAt}</p>
-          <h1>{selected.recipeName}</h1>
+          <div className="v7-batch-heading">
+            <div><p className="v6-kicker">LOTE REAL · {selected.brewedAt}</p><h1>{selected.recipeName}</h1></div>
+            <button className="v7-delete-lot" onClick={deleteLot}><Trash2 /> Apagar lote</button>
+          </div>
           <div className="v6-planned-actual">
             <div><span>OG</span><small>prevista</small><b>{fmtGravity(selected.planned?.originalGravity)}</b><small>real</small><strong>{fmtGravity(selected.actuals?.originalGravity)}</strong></div>
             <div><span>FG</span><small>prevista</small><b>{fmtGravity(selected.planned?.finalGravity)}</b><small>real</small><strong>{fmtGravity(selected.actuals?.finalGravity)}</strong></div>
@@ -685,6 +815,8 @@ function Notebook({
             </section>
           )}
         </article>
+      ) : (
+        <section className="v7-notebook-empty"><NotebookPen /><p className="v6-kicker">PRIMEIRO LOTE</p><h1>O histórico começa na panela.</h1><p>Suas receitas continuam disponíveis à esquerda. Quando iniciar uma brassagem, o lote aparece aqui.</p></section>
       )}
     </main>
   );
@@ -887,7 +1019,7 @@ export function BrewbookBrutalApp() {
       {view === 'home' && <Home recipe={recipe} recipes={recipes} onSelectRecipe={setRecipeId} onCreateRecipe={createRecipe} setView={setView} />}
       {view === 'recipe' && <RecipeEditor recipe={recipe} onChange={updateRecipe} onOpenAtlas={() => setView('atlas')} onStartBrew={() => setView('brew')} />}
       {view === 'brew' && activeSession && <BrewMode recipe={recipe} session={activeSession} sessions={sessions} onSessions={setSessions} />}
-      {view === 'notebook' && <Notebook sessions={sessions} onSessions={setSessions} />}
+      {view === 'notebook' && <Notebook sessions={sessions} onSessions={setSessions} recipes={recipes} onRecipes={setRecipes} activeRecipeId={recipe.id} onSelectRecipe={setRecipeId} />}
       {view === 'tools' && <Tools />}
       {view === 'atlas' && <Atlas recipe={recipe} onApply={(style) => { updateRecipe({ ...recipe, style }); setView('recipe'); }} />}
       {view === 'diagnostic' && <DiagnosticView />}
