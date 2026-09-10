@@ -2,8 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { BeerRecipe } from './types/brewing';
 import { SIGNATURE_RECIPES, BJCP_STYLES, YEAST_DATABASE } from './data/ingredients';
 import { calculateAllMetrics, scaleRecipeBatchSize } from './utils/brewingCalculations';
-import { Header, AppTab } from './components/Header';
-import { DashboardHome } from './components/DashboardHome';
+import { AppShell, AppTab } from './components/AppShell';
+import { BrewDeskHome } from './components/BrewDeskHome';
 import { HomebrewBanner } from './components/HomebrewBanner';
 import { VisualBeerGlass } from './components/VisualBeerGlass';
 import { BJCPRadarBar } from './components/BJCPRadarBar';
@@ -194,11 +194,12 @@ export const App: React.FC = () => {
     triggerRecipeCreationSpark();
   };
 
-  const handleCloneRecipe = () => {
+  const handleCloneRecipe = (sourceRecipeId = currentRecipe.id) => {
+    const sourceRecipe = recipes.find((recipe) => recipe.id === sourceRecipeId) || currentRecipe;
     const clone: BeerRecipe = {
-      ...currentRecipe,
+      ...sourceRecipe,
       id: `democrata-clone-${Date.now()}`,
-      name: `${currentRecipe.name} (Remix)`,
+      name: `${sourceRecipe.name} (nova brassagem)`,
       createdAt: new Date().toLocaleDateString('pt-BR'),
     };
     setRecipes((prev) => [clone, ...prev]);
@@ -263,25 +264,20 @@ export const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-stone-950 text-stone-100 font-sans antialiased selection:bg-amber-500 selection:text-black">
-      {/* Top Main Navigation */}
-      <Header
+      <AppShell
         currentRecipe={currentRecipe}
         allRecipes={recipes}
         onSelectRecipe={setActiveRecipeId}
         onNewRecipe={handleCreateNewRecipe}
-        onCloneRecipe={handleCloneRecipe}
+        onCloneRecipe={() => handleCloneRecipe()}
         activeTab={activeTab}
         onSelectTab={setActiveTab}
         onOpenAIForge={() => setIsAIForgeOpen(true)}
         onOpenCalculators={() => handleOpenCalculators('yeast')}
-        onStartBrewday={() => setActiveTab('cockpit')}
         onBatchSizeScale={handleBatchScale}
-      />
-
-      {/* Main App Container */}
-      <main className="lg:ml-72 max-w-[1600px] mx-auto lg:mx-0 px-3 sm:px-5 xl:px-7 py-4 sm:py-6 pb-10 space-y-6">
+      >
         {activeTab === 'home' && (
-          <DashboardHome
+          <BrewDeskHome
             currentRecipe={currentRecipe}
             recipes={recipes}
             brewSessions={brewSessions}
@@ -289,10 +285,8 @@ export const App: React.FC = () => {
             onSelectRecipe={setActiveRecipeId}
             onOpenRecipe={() => setActiveTab('architect')}
             onStartBrewday={() => setActiveTab('cockpit')}
-            onOpenWater={() => setActiveTab('water')}
-            onOpenCalculators={() => handleOpenCalculators('yeast')}
             onNewRecipe={handleCreateNewRecipe}
-            onCloneRecipe={handleCloneRecipe}
+            onRepeatRecipe={handleCloneRecipe}
           />
         )}
 
@@ -511,7 +505,7 @@ export const App: React.FC = () => {
 
         {/* TAB 6: BREW SHEET PRINT / EXPORT */}
         {activeTab === 'sheet' && <BrewSheetPrint recipe={currentRecipe} calculations={calculations} />}
-      </main>
+      </AppShell>
 
       {/* AI Forge Alchemist Modal */}
       <AIFudgeModal
@@ -559,3 +553,4 @@ export const App: React.FC = () => {
 };
 
 export default App;
+
