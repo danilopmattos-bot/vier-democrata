@@ -1,535 +1,277 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { BeerRecipe } from './types/brewing';
-import { SIGNATURE_RECIPES, BJCP_STYLES, YEAST_DATABASE } from './data/ingredients';
+import React, { useEffect, useMemo, useState } from 'react';
+import type { BeerRecipe, BJCPStyle, BrewSession } from './types/brewing';
+import { BJCP_STYLES, SIGNATURE_RECIPES, YEAST_DATABASE } from './data/ingredients';
 import { calculateAllMetrics, scaleRecipeBatchSize } from './utils/brewingCalculations';
-import { Header, AppTab } from './components/Header';
-import { DashboardHome } from './components/DashboardHome';
-import { HomebrewBanner } from './components/HomebrewBanner';
-import { VisualBeerGlass } from './components/VisualBeerGlass';
-import { BJCPRadarBar } from './components/BJCPRadarBar';
-import { GrainBillEditor } from './components/GrainBillEditor';
-import { HopScheduleEditor } from './components/HopScheduleEditor';
-import { YeastAndFermentationEditor } from './components/YeastAndFermentationEditor';
-import { MashStrikeCalculator } from './components/MashStrikeCalculator';
-import { WaterLab } from './components/WaterLab';
-import { BrewdayCockpit } from './components/BrewdayCockpit';
-import { OffFlavorMatrix } from './components/OffFlavorMatrix';
+import { AppShell, AppTab } from './components/AppShell';
+import { BrewDeskHome } from './components/BrewDeskHome';
+import { RecipeForgeV4 } from './components/RecipeForgeV4';
+import { BJCPAtlasV4 } from './components/BJCPAtlasV4';
+import { BrewdayV4 } from './components/BrewdayV4';
+import { WaterStudioV4 } from './components/WaterStudioV4';
+import { FermentationHistoryV4 } from './components/FermentationHistoryV4';
+import { DiagnosticsV4 } from './components/DiagnosticsV4';
 import { LabelStudio } from './components/LabelStudio';
 import { BrewSheetPrint } from './components/BrewSheetPrint';
 import { AIFudgeModal } from './components/AIFudgeModal';
 import { ToolsCalculatorModal } from './components/ToolsCalculatorModal';
-import { CustomStyleModal } from './components/CustomStyleModal';
-import { StyleSelectorModal } from './components/StyleSelectorModal';
 import { PrivateGate } from './components/PrivateGate';
 import { triggerRecipeCreationSpark } from './utils/dopamineEffects';
-import { Sparkles } from 'lucide-react';
-import { BJCPStyle } from './types/brewing';
+import {
+  loadBrewSessions,
+  loadRecipes,
+  readStoredArray,
+  saveBrewSessions,
+  STORAGE_KEYS,
+  writeStoredArray,
+} from './utils/localStorage';
 
-const STORAGE_KEY = 'democrata_craft_recipes_v1';
-const CUSTOM_STYLES_KEY = 'democrata_custom_styles_v1';
+const isoDate = () => new Date().toISOString().slice(0, 10);
 
 export const App: React.FC = () => {
-  // Gate check
-  const [isUnlocked, setIsUnlocked] = useState<boolean>(() => {
-    return localStorage.getItem('democrata_lab_unlocked_session') === 'true';
-  });
+  const [isUnlocked, setIsUnlocked] = useState<boolean>(() => localStorage.getItem('democrata_lab_unlocked_session') === 'true');
+  const [customStyles] = useState<BJCPStyle[]>(() => readStoredArray<BJCPStyle>(STORAGE_KEYS.customStyles, []));
+  const allStyles = useMemo(() => [...customStyles, ...BJCP_STYLES], [customStyles]);
 
-  // Load saved custom styles
-  const [customStyles, setCustomStyles] = useState<BJCPStyle[]>(() => {
-    const saved = localStorage.getItem(CUSTOM_STYLES_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
-      } catch (e) {
-        console.error('Failed to parse saved custom styles', e);
-      }
-    }
-    return [];
-  });
-
-  // Combine default BJCP styles with user's custom styles
-  const allStyles = useMemo(() => {
-    return [...customStyles, ...BJCP_STYLES];
-  }, [customStyles]);
-
-  // Load recipes from LocalStorage or fall back to SIGNATURE_RECIPES
-  const [recipes, setRecipes] = useState<BeerRecipe[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch (e) {
-        console.error('Failed to parse saved recipes', e);
-      }
-    }
-    return SIGNATURE_RECIPES;
-  });
-
-  const [activeRecipeId, setActiveRecipeId] = useState<string>(recipes[0]?.id || SIGNATURE_RECIPES[0].id);
-
-  // Active Tab
+  const [recipes, setRecipes] = useState<BeerRecipe[]>(() => loadRecipes(SIGNATURE_RECIPES));
+  const [brewSessions, setBrewSessions] = useState<BrewSession[]>(loadBrewSessions);
+  const [activeRecipeId, setActiveRecipeId] = useState<string>(() => recipes[0]?.id || SIGNATURE_RECIPES[0].id);
+  const [activeSessionId, setActiveSessionId] = useState<string>('');
   const [activeTab, setActiveTab] = useState<AppTab>('home');
 
-  // Modals
   const [isAIForgeOpen, setIsAIForgeOpen] = useState(false);
   const [isCalculatorsOpen, setIsCalculatorsOpen] = useState(false);
   const [calculatorInitialTab, setCalculatorInitialTab] = useState<'priming' | 'refractometer' | 'hydrometer' | 'dilution' | 'yeast'>('yeast');
-  const [isCustomStyleModalOpen, setIsCustomStyleModalOpen] = useState(false);
-  const [isStyleExplorerOpen, setIsStyleExplorerOpen] = useState(false);
 
-  const handleOpenCalculators = (tab?: 'priming' | 'refractometer' | 'hydrometer' | 'dilution' | 'yeast') => {
-    setCalculatorInitialTab(tab || 'yeast');
+  const currentRecipe = useMemo(() => recipes.find((recipe) => recipe.id === activeRecipeId) || recipes[0] || SIGNATURE_RECIPES[0], [recipes, activeRecipeId]);
+  const calculations = useMemo(() => calculateAllMetrics(currentRecipe), [currentRecipe]);
+
+  const currentSession = useMemo(() => {
+    const explicit = brewSessions.find((session) => session.id === activeSessionId);
+    if (explicit) return explicit;
+    return [...brewSessions]
+      .filter((session) => session.recipeId === currentRecipe.id && session.status !== 'completed')
+      .sort((a, b) => (b.updatedAt || b.brewedAt).localeCompare(a.updatedAt || a.brewedAt))[0];
+  }, [activeSessionId, brewSessions, currentRecipe.id]);
+
+  useEffect(() => writeStoredArray(STORAGE_KEYS.recipes, recipes), [recipes]);
+  useEffect(() => saveBrewSessions(brewSessions), [brewSessions]);
+
+  const handleOpenCalculators = (tab: 'priming' | 'refractometer' | 'hydrometer' | 'dilution' | 'yeast' = 'yeast') => {
+    setCalculatorInitialTab(tab);
     setIsCalculatorsOpen(true);
   };
 
-  // Active Recipe Object
-  const currentRecipe = useMemo(() => {
-    return recipes.find((r) => r.id === activeRecipeId) || recipes[0];
-  }, [recipes, activeRecipeId]);
-
-  // Real-time Brewing Math Engine Calculations
-  const calculations = useMemo(() => {
-    return calculateAllMetrics(currentRecipe);
-  }, [currentRecipe]);
-
-  // Persist recipes to LocalStorage on changes
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
-  }, [recipes]);
-
-  // Recipe Update Handlers
   const handleUpdateRecipe = (updated: BeerRecipe) => {
-    setRecipes((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+    setRecipes((previous) => previous.map((recipe) => recipe.id === updated.id ? updated : recipe));
+  };
+
+  const handleUpdateSession = (updated: BrewSession) => {
+    setBrewSessions((previous) => previous.map((session) => session.id === updated.id ? updated : session));
+    setActiveSessionId(updated.id);
   };
 
   const handleCreateNewRecipe = () => {
-    const newRecipe: BeerRecipe = {
-      id: `democrata-custom-${Date.now()}`,
-      name: 'Democrata Autoral # ' + (recipes.length + 1),
-      tagline: 'Cerveja Artesanal Feita em Casa',
+    const recipe: BeerRecipe = {
+      id: `democrata-${Date.now()}`,
+      name: `Nova receita ${recipes.length + 1}`,
+      tagline: 'Defina o objetivo sensorial desta cerveja.',
+      brewer: 'Cervejeiro Democrata',
       style: BJCP_STYLES[0],
       batchSizeLiters: 20,
-      efficiencyPercent: 72,
       boilTimeMinutes: 60,
-      grains: [
-        {
-          id: 'g-1',
-          name: 'Malte Pilsen Agrária / Weyermann',
-          amountKg: 4.5,
-          potentialSg: 1.037,
-          ebc: 3.5,
-          type: 'Base',
-        },
-      ],
-      hops: [
-        {
-          id: 'h-1',
-          name: 'Magnum',
-          amountGrams: 15,
-          alphaAcids: 14.0,
-          timeMinutes: 60,
-          use: 'Boil',
-          form: 'Pellet',
-        },
-        {
-          id: 'h-2',
-          name: 'Citra',
-          amountGrams: 30,
-          alphaAcids: 13.0,
-          timeMinutes: 10,
-          use: 'Boil',
-          form: 'Pellet',
-        },
-      ],
+      efficiencyPercent: 72,
+      grains: [{ id: `grain-${Date.now()}`, name: 'Malte Pilsen Alemão Premium (Weyermann)', amountKg: 4.5, potentialSg: 1.038, ebc: 3, type: 'Base' }],
+      hops: [{ id: `hop-${Date.now()}`, name: 'Magnum', amountGrams: 15, alphaAcids: 14, timeMinutes: 60, use: 'Boil', form: 'Pellet' }],
       yeast: YEAST_DATABASE[0],
       mashSchedule: [
-        {
-          id: 'm-1',
-          name: 'Sacarificação Geral (Mostura)',
-          tempCelsius: 66,
-          durationMinutes: 60,
-          type: 'Infusion',
-          description: 'Conversão balanceada de açúcares na panela',
-        },
-        {
-          id: 'm-2',
-          name: 'Mash Out (Inativação)',
-          tempCelsius: 76,
-          durationMinutes: 10,
-          type: 'Mash Out',
-          description: 'Fluidez do mosto para lavagem dos grãos',
-        },
+        { id: `mash-${Date.now()}`, name: 'Mostura principal', tempCelsius: 66, durationMinutes: 60, type: 'Infusion', description: 'Conversão principal dos açúcares.' },
+        { id: `mashout-${Date.now()}`, name: 'Mash out', tempCelsius: 76, durationMinutes: 10, type: 'Mash Out', description: 'Elevar a temperatura antes da lavagem.' },
       ],
-      waterTarget: {
-        id: 'wp-balanced',
-        name: 'Equilibrado / Versátil',
-        calcium: 60,
-        magnesium: 10,
-        sodium: 15,
-        chloride: 65,
-        sulfate: 65,
-        bicarbonate: 40,
-      },
-      waterSalts: {
-        gypsumGrams: 2.5,
-        calciumChlorideGrams: 2.5,
-        epsomSaltGrams: 1.0,
-        tableSaltGrams: 0,
-        bakingSodaGrams: 0,
-        lacticAcid88Ml: 1.5,
-      },
+      waterTarget: { id: 'v4-balanced', name: 'Equilibrado / Versátil', calcium: 60, magnesium: 10, sodium: 15, chloride: 65, sulfate: 65, bicarbonate: 40 },
+      waterSalts: { gypsumGrams: 2.5, calciumChlorideGrams: 2.5, epsomSaltGrams: 1, tableSaltGrams: 0, bakingSodaGrams: 0, lacticAcid88Ml: 1.5 },
       fermentationStages: [
-        {
-          name: 'Fermentação Primária',
-          tempCelsius: 19,
-          durationDays: 7,
-          description: 'Atenuação vigorosa dos açúcares',
-        },
-        {
-          name: 'Descanso de Diacetil',
-          tempCelsius: 22,
-          durationDays: 3,
-          description: 'Reabsorção de subprodutos e limpeza sensorial',
-        },
-        {
-          name: 'Cold Crash & Maturação',
-          tempCelsius: 2,
-          durationDays: 5,
-          description: 'Clarificação e decantação da levedura no balde',
-        },
+        { name: 'Fermentação principal', tempCelsius: 19, durationDays: 7, description: 'Acompanhar atividade e densidade sem perseguir um prazo exato.' },
+        { name: 'Finalização', tempCelsius: 21, durationDays: 3, description: 'Confirmar estabilidade antes de resfriar ou embalar.' },
       ],
-      notes: 'Receita artesanal caseira calibrada para a Democrata Bier.',
-      manifesto: 'Cerveja feita em casa com ingredientes de qualidade e paixão pelo processo.',
-      brewer: 'Cervejeiro Democrata',
-      createdAt: new Date().toLocaleDateString('pt-BR'),
+      notes: '',
+      createdAt: isoDate(),
     };
 
-    setRecipes((prev) => [newRecipe, ...prev]);
-    setActiveRecipeId(newRecipe.id);
+    setRecipes((previous) => [recipe, ...previous]);
+    setActiveRecipeId(recipe.id);
+    setActiveTab('architect');
     triggerRecipeCreationSpark();
   };
 
-  const handleCloneRecipe = () => {
+  const handleCloneRecipe = (sourceRecipeId = currentRecipe.id) => {
+    const source = recipes.find((recipe) => recipe.id === sourceRecipeId) || currentRecipe;
+    const previousSession = [...brewSessions]
+      .filter((session) => session.recipeId === source.id)
+      .sort((a, b) => (b.updatedAt || b.brewedAt).localeCompare(a.updatedAt || a.brewedAt))[0];
     const clone: BeerRecipe = {
-      ...currentRecipe,
-      id: `democrata-clone-${Date.now()}`,
-      name: `${currentRecipe.name} (Remix)`,
-      createdAt: new Date().toLocaleDateString('pt-BR'),
+      ...source,
+      id: `democrata-repeat-${Date.now()}`,
+      name: `${source.name} · nova versão`,
+      grains: source.grains.map((grain) => ({ ...grain, id: `${grain.id}-${Date.now()}` })),
+      hops: source.hops.map((hop) => ({ ...hop, id: `${hop.id}-${Date.now()}` })),
+      mashSchedule: source.mashSchedule.map((step) => ({ ...step, id: `${step.id}-${Date.now()}` })),
+      fermentationStages: source.fermentationStages.map((stage) => ({ ...stage })),
+      waterSalts: { ...source.waterSalts },
+      notes: previousSession?.notes ? `${source.notes ? `${source.notes}\n\n` : ''}Referência do último lote: ${previousSession.notes}` : source.notes,
+      createdAt: isoDate(),
     };
-    setRecipes((prev) => [clone, ...prev]);
+    setRecipes((previous) => [clone, ...previous]);
     setActiveRecipeId(clone.id);
+    setActiveTab('architect');
     triggerRecipeCreationSpark();
   };
 
-  const handleBatchScale = (newSize: number) => {
-    const scaled = scaleRecipeBatchSize(currentRecipe, newSize);
-    handleUpdateRecipe(scaled);
-  };
+  const handleBatchScale = (newSize: number) => handleUpdateRecipe(scaleRecipeBatchSize(currentRecipe, newSize));
 
-  const handleApplyAIRecipe = (aiRecipe: BeerRecipe) => {
-    setRecipes((prev) => [aiRecipe, ...prev]);
-    setActiveRecipeId(aiRecipe.id);
+  const handleApplyAIRecipe = (recipe: BeerRecipe) => {
+    setRecipes((previous) => [recipe, ...previous]);
+    setActiveRecipeId(recipe.id);
+    setActiveTab('architect');
     triggerRecipeCreationSpark();
   };
 
-  // Custom style save handler
-  const handleSaveCustomStyle = (newStyle: BJCPStyle) => {
-    // Check if it's in customStyles array
-    setCustomStyles((prev) => {
-      const idx = prev.findIndex((s) => s.id === newStyle.id);
-      let updated: BJCPStyle[];
-      if (idx >= 0) {
-        updated = [...prev];
-        updated[idx] = newStyle;
-      } else {
-        updated = [newStyle, ...prev];
-      }
-      localStorage.setItem(CUSTOM_STYLES_KEY, JSON.stringify(updated));
-      return updated;
-    });
-
-    // Set current recipe to use this style
-    handleUpdateRecipe({
-      ...currentRecipe,
-      style: newStyle,
-    });
-  };
-
-  // Style change handler
-  const handleStyleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const val = e.target.value;
-    if (val === 'NEW_CUSTOM_STYLE') {
-      setIsCustomStyleModalOpen(true);
-      return;
+  const createBrewSession = () => {
+    const existing = [...brewSessions]
+      .filter((session) => session.recipeId === currentRecipe.id && (session.status === 'planned' || session.status === 'brewing'))
+      .sort((a, b) => (b.updatedAt || b.brewedAt).localeCompare(a.updatedAt || a.brewedAt))[0];
+    if (existing) {
+      setActiveSessionId(existing.id);
+      return existing.id;
     }
 
-    const found = allStyles.find((s) => s.id === val);
-    if (found) {
-      handleUpdateRecipe({
-        ...currentRecipe,
-        style: found,
-      });
-    }
+    const session: BrewSession = {
+      id: `brew-${Date.now()}`,
+      recipeId: currentRecipe.id,
+      recipeName: currentRecipe.name,
+      brewedAt: isoDate(),
+      updatedAt: new Date().toISOString(),
+      status: 'brewing',
+      currentStepIndex: 0,
+      planned: {
+        originalGravity: calculations.og,
+        finalGravity: calculations.fg,
+        abv: calculations.abv,
+        ibu: calculations.ibu,
+        srm: calculations.srm,
+        efficiencyPercent: currentRecipe.efficiencyPercent,
+        batchSizeLiters: currentRecipe.batchSizeLiters,
+        styleCode: currentRecipe.style.code,
+        styleName: currentRecipe.style.name,
+      },
+      actuals: {},
+      readings: [],
+      fermentationReadings: [],
+      notes: '',
+    };
+    setBrewSessions((previous) => [session, ...previous]);
+    setActiveSessionId(session.id);
+    return session.id;
   };
 
-  if (!isUnlocked) {
-    return <PrivateGate onUnlock={() => setIsUnlocked(true)} />;
-  }
+  const handleStartBrewday = () => {
+    createBrewSession();
+    setActiveTab('cockpit');
+  };
+
+  const handleSelectTab = (tab: AppTab) => {
+    setActiveTab(tab);
+  };
+
+  if (!isUnlocked) return <PrivateGate onUnlock={() => setIsUnlocked(true)} />;
 
   return (
     <div className="min-h-screen bg-stone-950 text-stone-100 font-sans antialiased selection:bg-amber-500 selection:text-black">
-      {/* Top Main Navigation */}
-      <Header
+      <AppShell
         currentRecipe={currentRecipe}
         allRecipes={recipes}
         onSelectRecipe={setActiveRecipeId}
         onNewRecipe={handleCreateNewRecipe}
-        onCloneRecipe={handleCloneRecipe}
+        onCloneRecipe={() => handleCloneRecipe()}
         activeTab={activeTab}
-        onSelectTab={setActiveTab}
+        onSelectTab={handleSelectTab}
         onOpenAIForge={() => setIsAIForgeOpen(true)}
         onOpenCalculators={() => handleOpenCalculators('yeast')}
-        onStartBrewday={() => setActiveTab('cockpit')}
         onBatchSizeScale={handleBatchScale}
-      />
-
-      {/* Main App Container */}
-      <main className="lg:ml-72 max-w-[1600px] mx-auto lg:mx-0 px-3 sm:px-5 xl:px-7 py-4 sm:py-6 pb-10 space-y-6">
+      >
         {activeTab === 'home' && (
-          <DashboardHome
+          <BrewDeskHome
             currentRecipe={currentRecipe}
             recipes={recipes}
+            brewSessions={brewSessions}
             calculations={calculations}
             onSelectRecipe={setActiveRecipeId}
             onOpenRecipe={() => setActiveTab('architect')}
-            onStartBrewday={() => setActiveTab('cockpit')}
-            onOpenWater={() => setActiveTab('water')}
-            onOpenCalculators={() => handleOpenCalculators('yeast')}
+            onStartBrewday={handleStartBrewday}
             onNewRecipe={handleCreateNewRecipe}
-            onCloneRecipe={handleCloneRecipe}
+            onRepeatRecipe={handleCloneRecipe}
           />
         )}
 
-        {/* Receita */}
         {activeTab === 'architect' && (
-          <div className="space-y-6">
-            {/* Homebrew Craft Banner */}
-            <HomebrewBanner
-              onOpenAIForge={() => setIsAIForgeOpen(true)}
-              recipeName={currentRecipe.name}
-              styleName={currentRecipe.style.name}
-            />
-
-            {/* Top Recipe Header & Telemetry Card */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              {/* Left 3 cols: Recipe Name, Style, BJCP compliance meters */}
-              <div className="lg:col-span-3 space-y-4">
-                <div className="bg-stone-900/90 border border-stone-800 rounded-3xl p-4 sm:p-6 shadow-xl backdrop-blur-md">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
-                    <div className="w-full sm:flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[11px] uppercase font-bold tracking-widest text-amber-500">
-                          Nome da Cerveja
-                        </span>
-                      </div>
-                      <input
-                        type="text"
-                        value={currentRecipe.name}
-                        onChange={(e) => handleUpdateRecipe({ ...currentRecipe, name: e.target.value })}
-                        className="bg-transparent text-lg sm:text-2xl md:text-3xl font-black font-serif text-white focus:bg-stone-950 focus:outline-none px-2 py-1 rounded-xl w-full border border-transparent focus:border-stone-700 truncate"
-                      />
-                    </div>
-
-                    {/* Style Dropdown Selector & Custom Style Action */}
-                    <div className="w-full sm:w-auto sm:min-w-[280px]">
-                      <div className="flex items-center justify-between mb-1 gap-1">
-                        <label className="block text-[11px] uppercase font-bold text-stone-400">
-                          Estilo da cerveja
-                        </label>
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => setIsStyleExplorerOpen(true)}
-                            className="text-[10px] font-bold text-sky-400 hover:text-sky-300 flex items-center gap-1 cursor-pointer bg-sky-500/10 hover:bg-sky-500/20 px-2 py-0.5 rounded-md border border-sky-500/30 transition-all shrink-0"
-                            title="Abrir o catálogo completo com busca por estilo"
-                          >
-                            🔍 Ver estilos
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setIsCustomStyleModalOpen(true)}
-                            className="text-[10px] font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 cursor-pointer bg-amber-500/10 hover:bg-amber-500/20 px-2 py-0.5 rounded-md border border-amber-500/30 transition-all shrink-0"
-                            title="Criar estilo próprio com nome e limites customizados"
-                          >
-                            <Sparkles className="w-3 h-3" />
-                            {currentRecipe.style.id.startsWith('custom-') ? 'Editar' : 'Ajustar limites'}
-                          </button>
-                        </div>
-                      </div>
-
-                      <select
-                        value={currentRecipe.style.id}
-                        onChange={handleStyleChange}
-                        className="w-full bg-stone-950 border border-stone-700 text-amber-300 text-xs sm:text-sm font-bold rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-amber-500 focus:outline-none shadow-inner cursor-pointer"
-                      >
-                        <option value="NEW_CUSTOM_STYLE">✨ + Criar Novo Estilo Personalizado...</option>
-                        
-                        {customStyles.length > 0 && (
-                          <optgroup label="⭐ Estilos Personalizados Salvos">
-                            {customStyles.map((st) => (
-                              <option key={st.id} value={st.id}>
-                                ⭐ {st.name} ({st.category})
-                              </option>
-                            ))}
-                          </optgroup>
-                        )}
-
-                        <optgroup label="Guia Oficial BJCP 2021">
-                          {BJCP_STYLES.map((st) => (
-                            <option key={st.id} value={st.id}>
-                              {st.code} - {st.name}
-                            </option>
-                          ))}
-                        </optgroup>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Tagline & Efficiency */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-stone-800 text-xs sm:text-sm">
-                    <div className="sm:col-span-2">
-                      <span className="text-stone-400 font-semibold block mb-0.5">Descrição / Notas de Sabor:</span>
-                      <input
-                        type="text"
-                        value={currentRecipe.tagline || ''}
-                        onChange={(e) => handleUpdateRecipe({ ...currentRecipe, tagline: e.target.value })}
-                        placeholder="Ex: Refrescante, aroma cítrico de maracujá e corpo aveludado..."
-                        className="w-full bg-stone-950 border border-stone-800 text-stone-200 px-3 py-2 rounded-xl focus:outline-none text-xs sm:text-sm"
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between bg-stone-950 px-3 py-2 rounded-xl border border-stone-800">
-                      <span className="text-stone-300 font-bold">Eficiência:</span>
-                      <div className="flex items-center gap-1 font-mono font-black text-amber-400 text-sm sm:text-base">
-                        <input
-                          type="number"
-                          step="1"
-                          min="50"
-                          max="95"
-                          value={currentRecipe.efficiencyPercent}
-                          onChange={(e) =>
-                            handleUpdateRecipe({
-                              ...currentRecipe,
-                              efficiencyPercent: parseFloat(e.target.value) || 72,
-                            })
-                          }
-                          className="w-10 sm:w-12 bg-transparent text-right focus:outline-none"
-                        />
-                        <span>%</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* BJCP Real-Time Compliance Radar */}
-                <BJCPRadarBar style={currentRecipe.style} calculations={calculations} />
-              </div>
-
-              {/* Right 1 col: Visual Animated Beer Glass */}
-              <div className="lg:col-span-1 flex flex-col justify-between">
-                <VisualBeerGlass
-                  srm={calculations.srm}
-                  ebc={calculations.ebc}
-                  abv={calculations.abv}
-                  ibu={calculations.ibu}
-                  name={currentRecipe.name}
-                  styleName={currentRecipe.style.name}
-                />
-              </div>
-            </div>
-
-            {/* Grain Bill Editor */}
-            <GrainBillEditor
-              grains={currentRecipe.grains}
-              onChange={(newGrains) => handleUpdateRecipe({ ...currentRecipe, grains: newGrains })}
-              totalGrainKg={calculations.totalGrainKg}
-            />
-
-            {/* Hop Schedule Editor */}
-            <HopScheduleEditor
-              hops={currentRecipe.hops}
-              onChange={(newHops) => handleUpdateRecipe({ ...currentRecipe, hops: newHops })}
-              totalHopsGrams={calculations.totalHopsGrams}
-              totalIbu={calculations.ibu}
-            />
-
-            {/* Yeast & Fermentation Schedule */}
-            <YeastAndFermentationEditor
-              yeast={currentRecipe.yeast}
-              onYeastChange={(newYeast) => handleUpdateRecipe({ ...currentRecipe, yeast: newYeast })}
-              stages={currentRecipe.fermentationStages}
-              onStagesChange={(newStages) => handleUpdateRecipe({ ...currentRecipe, fermentationStages: newStages })}
-              batchSizeLiters={currentRecipe.batchSizeLiters}
-              og={calculations.og}
-              calculations={calculations}
-              onOpenCalculatorModal={() => handleOpenCalculators('yeast')}
-            />
-
-            {/* Mash & Strike Water Schedule */}
-            <MashStrikeCalculator
-              mashSchedule={currentRecipe.mashSchedule}
-              onScheduleChange={(newMash) => handleUpdateRecipe({ ...currentRecipe, mashSchedule: newMash })}
-              strikeWaterVolumeLiters={calculations.strikeWaterVolumeLiters}
-              strikeWaterTempCelsius={calculations.strikeWaterTempCelsius}
-              spargeWaterVolumeLiters={calculations.spargeWaterVolumeLiters}
-              preBoilVolumeLiters={calculations.preBoilVolumeLiters}
-              totalGrainKg={calculations.totalGrainKg}
-              batchSizeLiters={currentRecipe.batchSizeLiters}
-              calculations={calculations}
-            />
-          </div>
-        )}
-
-        {/* TAB 2: WATER CHEMISTRY LAB */}
-        {activeTab === 'water' && (
-          <WaterLab
-            waterTarget={currentRecipe.waterTarget}
-            onWaterTargetChange={(newTarget) => handleUpdateRecipe({ ...currentRecipe, waterTarget: newTarget })}
-            baseWaterSource={currentRecipe.baseWaterSource}
-            onBaseWaterSourceChange={(newBase) => handleUpdateRecipe({ ...currentRecipe, baseWaterSource: newBase })}
-            waterSalts={currentRecipe.waterSalts}
-            onSaltsChange={(newSalts) => handleUpdateRecipe({ ...currentRecipe, waterSalts: newSalts })}
-            calculatedWater={{
-              ...calculations.waterProfileResult,
-              sulfateToChlorideRatio: calculations.sulfateToChlorideRatio,
-            }}
-            grains={currentRecipe.grains}
-            totalWaterNeededLiters={calculations.totalWaterNeededLiters}
-          />
-        )}
-
-        {/* TAB 3: BREWDAY LIVE COCKPIT */}
-        {activeTab === 'cockpit' && (
-          <BrewdayCockpit
+          <RecipeForgeV4
             recipe={currentRecipe}
             calculations={calculations}
-            onExit={() => setActiveTab('architect')}
+            styles={allStyles}
+            onChange={handleUpdateRecipe}
+            onOpenStyleAtlas={() => setActiveTab('styles')}
+            onOpenWaterStudio={() => setActiveTab('water')}
+            onStartBrewday={handleStartBrewday}
           />
         )}
 
-        {/* TAB 4: OFF-FLAVOR DIAGNOSTIC MATRIX & AI DOCTOR */}
-        {activeTab === 'diagnostic' && <OffFlavorMatrix currentRecipe={currentRecipe} />}
+        {activeTab === 'styles' && (
+          <BJCPAtlasV4
+            styles={allStyles}
+            recipes={recipes}
+            currentStyleId={currentRecipe.style.id}
+            onUseStyle={(style) => { handleUpdateRecipe({ ...currentRecipe, style }); setActiveTab('architect'); }}
+            onOpenRecipe={(recipeId) => { setActiveRecipeId(recipeId); setActiveTab('architect'); }}
+          />
+        )}
 
-        {/* TAB 5: DEMOCRATA ART & LABEL STUDIO */}
+        {activeTab === 'cockpit' && (
+          <BrewdayV4
+            recipe={currentRecipe}
+            calculations={calculations}
+            session={currentSession}
+            onStartSession={createBrewSession}
+            onUpdateSession={handleUpdateSession}
+            onExit={() => setActiveTab('architect')}
+            onOpenFermentation={() => setActiveTab('fermentation')}
+          />
+        )}
+
+        {activeTab === 'fermentation' && (
+          <FermentationHistoryV4
+            sessions={brewSessions}
+            recipes={recipes}
+            activeRecipeId={currentRecipe.id}
+            onUpdateSession={handleUpdateSession}
+            onRepeatRecipe={handleCloneRecipe}
+            onSelectRecipe={(recipeId) => { setActiveRecipeId(recipeId); setActiveTab('architect'); }}
+          />
+        )}
+
+        {activeTab === 'water' && (
+          <WaterStudioV4
+            recipe={currentRecipe}
+            calculations={calculations}
+            session={currentSession}
+            onChange={handleUpdateRecipe}
+            onUpdateSession={handleUpdateSession}
+          />
+        )}
+
+        {activeTab === 'diagnostic' && <DiagnosticsV4 recipe={currentRecipe} />}
         {activeTab === 'labels' && <LabelStudio recipe={currentRecipe} calculations={calculations} />}
-
-        {/* TAB 6: BREW SHEET PRINT / EXPORT */}
         {activeTab === 'sheet' && <BrewSheetPrint recipe={currentRecipe} calculations={calculations} />}
-      </main>
+      </AppShell>
 
-      {/* AI Forge Alchemist Modal */}
       <AIFudgeModal
         isOpen={isAIForgeOpen}
         onClose={() => setIsAIForgeOpen(false)}
@@ -538,37 +280,12 @@ export const App: React.FC = () => {
         onApplyRecipe={handleApplyAIRecipe}
       />
 
-      {/* Quick Calculators Modal */}
       <ToolsCalculatorModal
         isOpen={isCalculatorsOpen}
         onClose={() => setIsCalculatorsOpen(false)}
         initialTab={calculatorInitialTab}
         recipe={currentRecipe}
         calculations={calculations}
-      />
-
-      {/* Custom Style Creation & Editing Modal */}
-      <CustomStyleModal
-        isOpen={isCustomStyleModalOpen}
-        onClose={() => setIsCustomStyleModalOpen(false)}
-        currentStyle={currentRecipe.style}
-        currentCalculations={calculations}
-        onSaveStyle={handleSaveCustomStyle}
-      />
-
-      {/* BJCP 2021 Style Explorer & Search Modal */}
-      <StyleSelectorModal
-        isOpen={isStyleExplorerOpen}
-        onClose={() => setIsStyleExplorerOpen(false)}
-        styles={allStyles}
-        currentStyleId={currentRecipe.style.id}
-        onSelectStyle={(selectedStyle) => {
-          handleUpdateRecipe({
-            ...currentRecipe,
-            style: selectedStyle,
-          });
-        }}
-        onCreateCustomStyle={() => setIsCustomStyleModalOpen(true)}
       />
     </div>
   );
