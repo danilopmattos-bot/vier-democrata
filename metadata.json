@@ -1,0 +1,6 @@
+{
+  "name": "Democrata Craft Brew Lab & Recipe Forge",
+  "description": "Laboratório avançado de engenharia de receitas cervejeiras para a Cervejaria Democrata: arquiteto de fórmulas, química de água, simulador BJCP 2021, gerador de rótulos e mestre cervejeiro com IA.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

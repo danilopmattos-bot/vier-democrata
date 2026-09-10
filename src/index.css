@@ -1,0 +1,296 @@
+@import "tailwindcss";
+
+@layer base {
+  *, ::before, ::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    overflow-x: hidden !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    -webkit-text-size-adjust: 100%;
+    touch-action: manipulation;
+  }
+
+  body {
+    @apply bg-stone-950 text-stone-100 antialiased;
+    overflow-x: hidden !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    position: relative;
+    overscroll-behavior-x: none;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    background-color: #0c0a09;
+    background-image: 
+      radial-gradient(at 0% 0%, rgba(245, 158, 11, 0.08) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(180, 83, 9, 0.06) 0px, transparent 50%),
+      radial-gradient(at 50% 100%, rgba(217, 119, 6, 0.05) 0px, transparent 60%);
+    background-attachment: fixed;
+  }
+
+  #root {
+    overflow-x: hidden !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    min-height: 100vh;
+  }
+
+  h1, h2, h3, .font-serif {
+    font-family: 'Cinzel', serif, Georgia;
+  }
+
+  code, pre, .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+/* Realistic Brewery Stainless Steel & Industrial Textures */
+.metal-steel {
+  background: linear-gradient(145deg, #1f2227 0%, #15181c 50%, #0d0f12 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+
+.metal-brass {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 50%, #78350f 100%);
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.4), 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.metal-bezel {
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.25), inset 0 -2px 4px rgba(0, 0, 0, 0.8), 0 4px 12px rgba(0,0,0,0.5);
+}
+
+/* Micro-Carbonation Bubble Flow */
+@keyframes rise-bubbles {
+  0% {
+    transform: translateY(100%) scale(0.6);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.9;
+  }
+  80% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(-20%) scale(1.2);
+    opacity: 0;
+  }
+}
+
+@keyframes liquid-wave {
+  0%, 100% {
+    transform: rotate(0deg) scaleY(1);
+  }
+  50% {
+    transform: rotate(0.8deg) scaleY(1.02);
+  }
+}
+
+@keyframes caustics-shimmer {
+  0% {
+    opacity: 0.3;
+    transform: translateY(-10px) rotate(-15deg) scale(1);
+  }
+  50% {
+    opacity: 0.75;
+    transform: translateY(10px) rotate(-12deg) scale(1.08);
+  }
+  100% {
+    opacity: 0.3;
+    transform: translateY(-10px) rotate(-15deg) scale(1);
+  }
+}
+
+.animate-rising-bubble {
+  animation: rise-bubbles 2.4s infinite ease-in;
+}
+
+.animate-caustics {
+  animation: caustics-shimmer 4s infinite ease-in-out;
+}
+
+.animate-liquid {
+  animation: liquid-wave 5s infinite ease-in-out;
+}
+
+/* Glass & Condensation Physical Effects */
+.glass-condense {
+  background-image: 
+    radial-gradient(1.5px 1.5px at 15px 25px, rgba(255,255,255,0.9) 60%, rgba(0,0,0,0.4) 100%),
+    radial-gradient(2.5px 3px at 38px 65px, rgba(255,255,255,0.85) 60%, rgba(0,0,0,0.3) 100%),
+    radial-gradient(1.8px 2px at 68px 35px, rgba(255,255,255,0.9) 60%, rgba(0,0,0,0.3) 100%),
+    radial-gradient(1.2px 1.5px at 85px 105px, rgba(255,255,255,0.8) 60%, rgba(0,0,0,0.4) 100%),
+    radial-gradient(2px 2.8px at 28px 135px, rgba(255,255,255,0.85) 60%, rgba(0,0,0,0.3) 100%),
+    radial-gradient(1px 1px at 58px 165px, rgba(255,255,255,0.8) 60%, rgba(0,0,0,0.4) 100%),
+    radial-gradient(3px 3.5px at 80px 180px, rgba(255,255,255,0.75) 60%, rgba(0,0,0,0.3) 100%),
+    radial-gradient(1.5px 2px at 105px 60px, rgba(255,255,255,0.85) 60%, rgba(0,0,0,0.3) 100%);
+}
+
+/* Craft Texture Noise & Glow utility */
+.craft-glow {
+  box-shadow: 0 0 25px -5px rgba(245, 158, 11, 0.25);
+}
+
+/* Surreal 3D Metallic Can & Foil Shaders */
+.can-aluminum-top {
+  background: radial-gradient(circle at 50% 30%, #f1f5f9 0%, #cbd5e1 45%, #94a3b8 70%, #475569 100%);
+  box-shadow: inset 0 2px 4px rgba(255,255,255,0.9), inset 0 -3px 6px rgba(0,0,0,0.6), 0 8px 20px rgba(0,0,0,0.7);
+}
+
+.can-chime-rim {
+  background: linear-gradient(90deg, #64748b 0%, #94a3b8 15%, #f8fafc 40%, #e2e8f0 60%, #94a3b8 85%, #475569 100%);
+}
+
+.can-metallic-sheen {
+  background: linear-gradient(90deg, 
+    rgba(0,0,0,0.85) 0%, 
+    rgba(255,255,255,0.02) 12%, 
+    rgba(255,255,255,0.22) 28%, 
+    rgba(255,255,255,0.45) 34%, 
+    rgba(255,255,255,0.15) 42%, 
+    rgba(0,0,0,0.2) 65%, 
+    rgba(255,255,255,0.08) 85%, 
+    rgba(0,0,0,0.9) 100%
+  );
+}
+
+.foil-gold {
+  background: linear-gradient(135deg, #ffd700 0%, #f59e0b 25%, #b45309 50%, #fbbf24 75%, #d97706 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 6px rgba(217, 119, 6, 0.4));
+}
+
+.foil-holographic {
+  background: linear-gradient(115deg, #f43f5e, #ec4899, #8b5cf6, #3b82f6, #10b981, #f59e0b, #f43f5e);
+  background-size: 300% 300%;
+  animation: holo-shift 6s ease infinite;
+}
+
+@keyframes holo-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.can-ice-drip {
+  background-image:
+    radial-gradient(2px 3.5px at 15% 20%, rgba(255,255,255,0.95) 50%, transparent 100%),
+    radial-gradient(1.5px 2px at 25% 45%, rgba(255,255,255,0.85) 50%, transparent 100%),
+    radial-gradient(3px 4px at 40% 15%, rgba(255,255,255,0.9) 50%, transparent 100%),
+    radial-gradient(2px 5px at 60% 70%, rgba(255,255,255,0.95) 50%, transparent 100%),
+    radial-gradient(1.8px 3px at 75% 30%, rgba(255,255,255,0.9) 50%, transparent 100%),
+    radial-gradient(2.5px 4px at 88% 55%, rgba(255,255,255,0.85) 50%, transparent 100%),
+    radial-gradient(1.2px 2px at 50% 85%, rgba(255,255,255,0.8) 50%, transparent 100%),
+    linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.15) 10%, transparent 20%);
+}
+
+.craft-glow-emerald {
+  box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.25);
+}
+
+.craft-glow-cyan {
+  box-shadow: 0 0 25px -5px rgba(6, 182, 212, 0.25);
+}
+
+/* 3D Physical Engineering Workbench & Card Flip System */
+.perspective-container {
+  perspective: 1200px;
+}
+
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+.workbench-card {
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.35s ease, border-color 0.3s ease;
+  transform-style: preserve-3d;
+}
+
+.workbench-card:hover {
+  box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.9), 0 0 20px -2px rgba(245, 158, 11, 0.15);
+}
+
+.blueprint-grid {
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.workbench-bezel {
+  box-shadow: 
+    inset 0 1px 1px rgba(255, 255, 255, 0.12),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.8),
+    0 12px 30px rgba(0, 0, 0, 0.7);
+}
+
+/* Metal rivet / screw aesthetic for physical engineering feel */
+.rivet-screw {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #94a3b8 0%, #475569 60%, #1e293b 100%);
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.6), 0 1px 2px rgba(0,0,0,0.8);
+  position: absolute;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: #09090b;
+}
+::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 9999px;
+  border: 1px solid #3f3f46;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #f59e0b;
+}
+
+@media print {
+  body {
+    background-color: white !important;
+    background-image: none !important;
+    color: black !important;
+  }
+  header,
+  nav,
+  button,
+  .no-print {
+    display: none !important;
+  }
+  #printable-brew-sheet {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+}
+
+/* Mobile navigation should feel like an app, without a visible browser scrollbar. */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}

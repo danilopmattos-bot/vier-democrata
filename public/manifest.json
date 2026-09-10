@@ -1,0 +1,30 @@
+{
+  "short_name": "Democrata Lab",
+  "name": "Democrata Bier • Craft Lab",
+  "description": "Laboratório de Engenharia Cervejeira, Criação de Fórmulas e Alquimia de Lúpulos & Maltes",
+  "icons": [
+    {
+      "src": "/democrata-logo-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/democrata-logo-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/democrata-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#0c0a09",
+  "background_color": "#0c0a09",
+  "orientation": "portrait"
+}
