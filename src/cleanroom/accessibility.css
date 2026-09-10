@@ -1,0 +1,253 @@
+/* Democrata Brewbook — readability pass for comfortable 50+ use */
+
+html { font-size: 18px; }
+body { font-size: 1rem; }
+
+.bb-gate,
+.bb-cover,
+.bb-workroom,
+.bb-brewmode,
+.bb-notebook,
+.bb-atlas,
+.bb-diagnostic {
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.bb-gate button,
+.bb-cover button,
+.bb-workroom button,
+.bb-brewmode button,
+.bb-notebook button,
+.bb-atlas button,
+.bb-diagnostic button,
+.bb-gate input,
+.bb-cover input,
+.bb-workroom input,
+.bb-workroom select,
+.bb-workroom textarea,
+.bb-brewmode input,
+.bb-brewmode select,
+.bb-brewmode textarea,
+.bb-notebook input,
+.bb-notebook select,
+.bb-notebook textarea,
+.bb-atlas input,
+.bb-diagnostic input {
+  min-height: 50px;
+}
+
+.bb-eyebrow { font-size: .82rem !important; letter-spacing: .16em !important; }
+
+/* Photo visibility */
+.bb-gate__photo {
+  opacity: 1 !important;
+  filter: saturate(.96) contrast(1.03) brightness(1.05) !important;
+  object-position: 58% 28% !important;
+}
+.bb-gate__veil {
+  background:
+    linear-gradient(90deg, rgba(5,4,3,.86) 0%, rgba(5,4,3,.68) 38%, rgba(5,4,3,.20) 70%, rgba(5,4,3,.05) 100%),
+    linear-gradient(0deg, rgba(5,4,3,.80) 0%, transparent 50%) !important;
+}
+.bb-cover__photo {
+  opacity: 1 !important;
+  filter: saturate(.95) contrast(1.03) brightness(1.06) !important;
+  object-position: 60% 26% !important;
+}
+.bb-cover__veil {
+  background:
+    linear-gradient(90deg, rgba(7,6,4,.86) 0%, rgba(7,6,4,.70) 36%, rgba(7,6,4,.26) 68%, rgba(7,6,4,.05) 100%),
+    linear-gradient(0deg, rgba(7,6,4,.88) 0%, rgba(7,6,4,.18) 48%, rgba(7,6,4,.12) 100%) !important;
+}
+
+/* Brand mark without changing the clean-room composition */
+.bb-gate__content::before,
+.bb-cover__topline > div::before {
+  content: '';
+  display: inline-block;
+  width: 74px;
+  height: 74px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: url('../assets/images/democrata_logo.png') center / cover no-repeat;
+  box-shadow: 0 10px 32px rgba(0,0,0,.38);
+}
+.bb-gate__content::before { margin-bottom: 18px; }
+.bb-cover__topline > div { gap: 16px !important; }
+
+/* Access screen */
+.bb-gate__intro { font-size: 1.1rem !important; line-height: 1.7 !important; color: #e2d7c5 !important; }
+.bb-pin > div:first-child { font-size: 1rem !important; }
+.bb-pin > div:first-child small { font-size: .9rem !important; color: #b7ad9e !important; }
+.bb-pin input { font-size: 1.15rem !important; padding: 16px 18px !important; }
+.bb-pin button { font-size: 1rem !important; padding: 0 22px !important; }
+.bb-pin__error { font-size: 1rem !important; }
+
+/* Cover */
+.bb-cover__topline b { font-size: 1.35rem !important; }
+.bb-cover__topline span { font-size: .9rem !important; color: #c6b9a6 !important; }
+.bb-cover__topline button { font-size: 1rem !important; font-weight: 700; }
+.bb-cover__statement > p:last-child { font-size: 1.15rem !important; line-height: 1.65 !important; color: #ded2bf !important; max-width: 620px !important; }
+.bb-cover__paths button { min-height: 150px !important; padding: 26px 28px !important; }
+.bb-cover__paths strong { font-size: 1.55rem !important; }
+.bb-cover__paths small { font-size: 1rem !important; color: #c1b5a3 !important; line-height: 1.35; }
+.bb-cover__paths button > span { font-size: .82rem !important; color: #b8aa97 !important; }
+.bb-cover__current { padding: 12px 0 !important; }
+.bb-cover__current > div:first-child span { font-size: .8rem !important; color: #b6aa99 !important; }
+.bb-cover__current > div:first-child strong { font-size: 1.35rem !important; }
+.bb-cover__current > div:first-child small { font-size: .95rem !important; color: #c3b6a3 !important; }
+.bb-cover__numbers b { font-size: 1.05rem !important; }
+.bb-cover__numbers span { font-size: .8rem !important; color: #aaa090 !important; }
+
+/* Recipe / workroom */
+.bb-workroom__head { min-height: 84px !important; height: auto !important; padding-block: 10px !important; }
+.bb-workroom__head button,
+.bb-page-head button { font-size: 1rem !important; }
+.bb-workroom__head > div span { font-size: .78rem !important; color: #b7aa98 !important; }
+.bb-workroom__head > div strong { font-size: 1.15rem !important; }
+.bb-steps button { min-height: 56px !important; }
+.bb-steps button span { font-size: .82rem !important; }
+.bb-steps button strong { font-size: 1rem !important; }
+.bb-lead { font-size: 1.1rem !important; line-height: 1.65 !important; }
+.bb-field > span { font-size: .85rem !important; color: #655747 !important; }
+.bb-field input { font-size: 1.45rem !important; padding: 13px 0 !important; }
+.bb-field > div i { font-size: 1rem !important; }
+.bb-intent-style span { font-size: .8rem !important; }
+.bb-intent-style strong { font-size: 1.45rem !important; }
+.bb-intent-style p { font-size: 1rem !important; line-height: 1.5 !important; }
+.bb-intent-style button,
+.bb-style-apply,
+.bb-add { font-size: 1rem !important; min-height: 50px; }
+.bb-row { min-height: 76px !important; }
+.bb-row__name { font-size: 1.25rem !important; }
+.bb-row label,
+.bb-row label input { font-size: 1rem !important; }
+.bb-total-line span { font-size: .9rem !important; }
+
+/* General readable metadata */
+.bb-workroom small,
+.bb-brewmode small,
+.bb-notebook small,
+.bb-atlas small,
+.bb-diagnostic small { font-size: .95rem !important; line-height: 1.4; }
+.bb-workroom p,
+.bb-notebook p,
+.bb-atlas p,
+.bb-diagnostic p { font-size: 1rem; line-height: 1.6; }
+
+/* Brew mode: large targets and easy touch */
+.bb-brewmode header button,
+.bb-brewmode footer button { min-width: 56px; min-height: 56px; }
+.bb-live-log h2 { font-size: 1.35rem !important; }
+.bb-live-log__entry select,
+.bb-live-log__entry input { font-size: 1rem !important; }
+.bb-stage-note { font-size: 1.1rem !important; line-height: 1.6 !important; }
+.bb-stage-alert { font-size: 1rem !important; }
+
+/* Notebook / atlas / diagnostics */
+.bb-page-head span { font-size: .85rem !important; }
+.bb-batch-list strong { font-size: 1.05rem !important; }
+.bb-batch-list small { font-size: .92rem !important; }
+.bb-style-page p,
+.bb-style-intro,
+.bb-diagnostic article p,
+.bb-diagnostic article li { font-size: 1.05rem !important; line-height: 1.65 !important; }
+.bb-atlas__index input,
+.bb-diagnostic__search input { font-size: 1rem !important; }
+.bb-atlas__index button strong,
+.bb-diagnostic__layout section button strong { font-size: 1rem !important; }
+
+/* Persistent calculator dock */
+.bb-global-tools {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 120;
+  display: grid;
+  justify-items: end;
+  gap: 12px;
+  font-family: var(--bb-sans);
+}
+body:has(.bb-gate) .bb-global-tools { display: none; }
+.bb-global-tools__trigger {
+  min-height: 58px;
+  border: 1px solid rgba(255,245,223,.26);
+  background: #efe2c7;
+  color: #15100c;
+  border-radius: 999px;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1rem;
+  font-weight: 800;
+  box-shadow: 0 14px 38px rgba(0,0,0,.38);
+}
+.bb-global-tools__trigger svg { width: 21px; height: 21px; }
+.bb-global-tools__trigger svg:last-child { width: 17px; transition: transform .2s ease; }
+.bb-global-tools__trigger svg:last-child.is-open { transform: rotate(180deg); }
+.bb-global-tools__panel {
+  width: min(390px, calc(100vw - 32px));
+  background: rgba(17,16,13,.98);
+  border: 1px solid rgba(239,226,199,.22);
+  box-shadow: 0 24px 70px rgba(0,0,0,.55);
+  border-radius: 20px;
+  overflow: hidden;
+}
+.bb-global-tools__head {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  padding:18px 18px 14px;
+  border-bottom:1px solid rgba(239,226,199,.13);
+}
+.bb-global-tools__head > div { display:grid; gap:3px; }
+.bb-global-tools__head span { font: .78rem var(--bb-mono); letter-spacing:.12em; color:#b7aa96; }
+.bb-global-tools__head strong { font: 400 1.45rem var(--bb-serif); color: var(--bb-cream); }
+.bb-global-tools__head button { width:48px; height:48px; border:0; border-radius:50%; background:#27221d; color:var(--bb-cream); display:grid; place-items:center; }
+.bb-global-tools__head button svg { width:20px; }
+.bb-global-tools__list { display:grid; padding:8px; }
+.bb-global-tools__list button {
+  min-height:64px;
+  border:0;
+  border-bottom:1px solid rgba(239,226,199,.09);
+  background:transparent;
+  color:var(--bb-cream);
+  display:grid;
+  grid-template-columns:34px 1fr;
+  gap:12px;
+  align-items:center;
+  text-align:left;
+  padding:10px 12px;
+}
+.bb-global-tools__list button:hover { background:rgba(184,95,47,.14); }
+.bb-global-tools__list button > svg { width:22px; color:var(--bb-copper-bright); }
+.bb-global-tools__list button span { display:grid; gap:2px; }
+.bb-global-tools__list button strong { font-size:1rem; }
+.bb-global-tools__list button small { font-size:.9rem; color:#b9ad9b; }
+
+/* Existing calculator modal also gets readable sizing */
+body.bb-large-ui > div.fixed.inset-0 .text-\[11px\],
+body.bb-large-ui > div.fixed.inset-0 .text-xs { font-size: 1rem !important; }
+body.bb-large-ui > div.fixed.inset-0 .text-sm { font-size: 1.05rem !important; }
+body.bb-large-ui > div.fixed.inset-0 input,
+body.bb-large-ui > div.fixed.inset-0 select,
+body.bb-large-ui > div.fixed.inset-0 button { min-height: 48px; }
+
+@media (max-width: 900px) {
+  html { font-size: 17px; }
+  .bb-gate__content::before,
+  .bb-cover__topline > div::before { width: 62px; height: 62px; }
+  .bb-cover__photo { object-position: 66% 28% !important; }
+  .bb-gate__photo { object-position: 64% 28% !important; }
+  .bb-global-tools { right: 14px; bottom: 14px; }
+  .bb-global-tools__trigger { min-height: 56px; padding: 0 17px; }
+}
+
+@media (max-width: 640px) {
+  .bb-cover__paths button { min-height: 126px !important; }
+  .bb-cover__paths strong { font-size: 1.35rem !important; }
+  .bb-global-tools__trigger span { display: inline; }
+}
