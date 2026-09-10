@@ -1,9 +1,6 @@
 import type { BeerRecipe, BrewSession } from '../types/brewing';
 
-/**
- * These keys are part of the browser data contract. Keep the recipe key stable
- * so installations from previous versions open with no migration required.
- */
+/** Browser data contract. Keep these keys stable for backwards compatibility. */
 export const STORAGE_KEYS = {
   recipes: 'democrata_craft_recipes_v1',
   customStyles: 'democrata_custom_styles_v1',
@@ -11,7 +8,8 @@ export const STORAGE_KEYS = {
 } as const;
 
 export const readStoredArray = <T>(key: string, fallback: T[]): T[] => {
-  const saved = localStorage.getItem(key);
+  if (typeof window === 'undefined') return fallback;
+  const saved = window.localStorage.getItem(key);
   if (!saved) return fallback;
 
   try {
@@ -23,6 +21,15 @@ export const readStoredArray = <T>(key: string, fallback: T[]): T[] => {
   }
 };
 
+export const writeStoredArray = <T>(key: string, value: T[]): void => {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.error(`Failed to persist local data at ${key}`, error);
+  }
+};
+
 export const loadRecipes = (fallback: BeerRecipe[]): BeerRecipe[] => {
   const recipes = readStoredArray<BeerRecipe>(STORAGE_KEYS.recipes, fallback);
   return recipes.length > 0 ? recipes : fallback;
@@ -30,3 +37,6 @@ export const loadRecipes = (fallback: BeerRecipe[]): BeerRecipe[] => {
 
 export const loadBrewSessions = (): BrewSession[] =>
   readStoredArray<BrewSession>(STORAGE_KEYS.brewSessions, []);
+
+export const saveBrewSessions = (sessions: BrewSession[]): void =>
+  writeStoredArray(STORAGE_KEYS.brewSessions, sessions);
