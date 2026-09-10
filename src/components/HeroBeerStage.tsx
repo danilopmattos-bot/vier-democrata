@@ -1,5 +1,4 @@
 import React from 'react';
-import { Beer, Droplets, Sparkles } from 'lucide-react';
 import { srmToHex } from '../utils/brewingCalculations';
 import { DemocrataLogo } from './DemocrataLogo';
 
@@ -26,23 +25,12 @@ export const HeroBeerStage: React.FC<HeroBeerStageProps> = ({ srm, abv, ibu, nam
   const beerColor = srmToHex(srm);
 
   return (
-    <div className="relative mx-auto flex min-h-[370px] w-full max-w-[390px] items-end justify-center sm:min-h-[430px]">
+    <div
+      className="relative mx-auto flex min-h-[370px] w-full max-w-[390px] items-end justify-center sm:min-h-[430px]"
+      aria-label={`${name}, ${styleName}, ${abv.toFixed(1)}% ABV, ${Math.round(ibu)} IBU`}
+    >
       <div className="pointer-events-none absolute bottom-7 left-1/2 h-52 w-52 -translate-x-1/2 rounded-full bg-amber-500/25 blur-[70px]" />
       <div className="pointer-events-none absolute bottom-2 left-1/2 h-8 w-56 -translate-x-1/2 rounded-[100%] bg-black/70 blur-xl" />
-
-      <div className="absolute right-0 top-7 z-20 hidden rounded-2xl border border-white/10 bg-black/45 px-3 py-2.5 shadow-2xl backdrop-blur-xl sm:block">
-        <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.18em] text-amber-200/80">
-          <Sparkles className="h-3 w-3" /> Receita atual
-        </div>
-        <p className="mt-1 max-w-[150px] truncate text-xs font-extrabold text-stone-100">{name}</p>
-      </div>
-
-      <div className="absolute left-0 top-[35%] z-20 hidden rounded-2xl border border-white/10 bg-black/45 px-3 py-2.5 shadow-2xl backdrop-blur-xl sm:block">
-        <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.18em] text-stone-400">
-          <Droplets className="h-3 w-3 text-sky-300" /> Perfil
-        </div>
-        <p className="mt-1 max-w-[135px] truncate text-xs font-bold text-stone-200">{styleName}</p>
-      </div>
 
       <div className="beer-hero-glass group relative z-10 h-[350px] w-[190px] sm:h-[405px] sm:w-[220px]">
         <div className="beer-hero-liquid" style={{ backgroundColor: beerColor }}>
@@ -85,15 +73,7 @@ export const HeroBeerStage: React.FC<HeroBeerStageProps> = ({ srm, abv, ibu, nam
 
         <div className="pointer-events-none absolute inset-x-[17%] bottom-[3%] z-40 h-[4%] rounded-[50%] bg-white/25 blur-[2px]" />
       </div>
-
-      <div className="absolute bottom-0 z-30 flex items-center gap-1.5 rounded-full border border-white/10 bg-[#0c0906]/85 px-3.5 py-2 shadow-xl backdrop-blur-xl">
-        <Beer className="h-3.5 w-3.5 text-amber-300" />
-        <span className="font-mono text-[10px] font-black text-stone-200">{abv.toFixed(1)}% ABV</span>
-        <span className="text-stone-700">•</span>
-        <span className="font-mono text-[10px] font-black text-stone-200">{Math.round(ibu)} IBU</span>
-        <span className="text-stone-700">•</span>
-        <span className="font-mono text-[10px] font-black text-stone-200">{Math.round(srm)} SRM</span>
-      </div>
     </div>
   );
 };
+

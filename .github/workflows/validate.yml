@@ -2,9 +2,9 @@ name: Validate Democrata Bier
 
 on:
   push:
-    branches: [main]
+    branches: [main, v4-authoral]
   pull_request:
-    branches: [main]
+    branches: [main, v4-authoral]
 
 jobs:
   build:

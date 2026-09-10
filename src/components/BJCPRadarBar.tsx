@@ -9,6 +9,14 @@ interface BJCPRadarBarProps {
 
 export const BJCPRadarBar: React.FC<BJCPRadarBarProps> = ({ style, calculations }) => {
   const { og, fg, abv, ibu, srm, bjcpCompliance } = calculations;
+  const statuses = [
+    bjcpCompliance.ogStatus,
+    bjcpCompliance.fgStatus,
+    bjcpCompliance.abvStatus,
+    bjcpCompliance.ibuStatus,
+    bjcpCompliance.srmStatus,
+  ];
+  const dimensionsOutsideStyle = statuses.filter((status) => status !== 'ok').length;
 
   const renderGauge = (
     label: string,
@@ -114,22 +122,18 @@ export const BJCPRadarBar: React.FC<BJCPRadarBarProps> = ({ style, calculations 
           </h3>
         </div>
 
-        {/* BJCP Compliance Score */}
+        {/* Dimension-by-dimension summary; the stored score is not presented as a verdict. */}
         <div className="flex items-center gap-3 bg-stone-950/80 px-3.5 py-1.5 rounded-xl border border-stone-800">
           <div className="text-right">
-            <div className="text-[10px] text-stone-400 uppercase tracking-wider">Aderência ao Estilo</div>
+            <div className="text-[10px] text-stone-400 uppercase tracking-wider">Faixas do estilo</div>
             <div className="text-xs font-semibold text-stone-200">
-              {bjcpCompliance.score >= 80 ? 'Padrão Ouro Democrata' : 'Fora do Padrão BJCP'}
+              {dimensionsOutsideStyle === 0
+                ? 'Todas as medidas na faixa'
+                : `${dimensionsOutsideStyle} ${dimensionsOutsideStyle === 1 ? 'medida fora' : 'medidas fora'}`}
             </div>
           </div>
-          <div
-            className={`w-10 h-10 rounded-full flex items-center justify-center font-mono font-black text-sm border-2 ${
-              bjcpCompliance.score >= 80
-                ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.3)]'
-                : 'bg-amber-950/80 text-amber-300 border-amber-500'
-            }`}
-          >
-            {bjcpCompliance.score}%
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${dimensionsOutsideStyle === 0 ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500' : 'bg-amber-950/80 text-amber-300 border-amber-500'}`}>
+            {dimensionsOutsideStyle === 0 ? <CheckCircle2 className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
           </div>
         </div>
       </div>
@@ -153,12 +157,12 @@ export const BJCPRadarBar: React.FC<BJCPRadarBarProps> = ({ style, calculations 
           <span className="text-stone-400">
             (Alvo do Estilo: <span className="text-amber-300 font-mono">{style.targetBuGu}</span> •{' '}
             {calculations.buGu > 0.9
-              ? 'Altamente Amarga & Crocante'
+              ? 'amargor muito alto para a gravidade'
               : calculations.buGu > 0.6
-              ? 'Equilibrada com Bom Amargor'
+              ? 'amargor em destaque'
               : calculations.buGu > 0.4
-              ? 'Foco no Malte & Dulçor'
-              : 'Muito Suave / Maltada'}
+              ? 'equilíbrio entre malte e amargor'
+              : 'malte em destaque'}
             )
           </span>
         </div>
@@ -169,3 +173,4 @@ export const BJCPRadarBar: React.FC<BJCPRadarBarProps> = ({ style, calculations 
     </div>
   );
 };
+
