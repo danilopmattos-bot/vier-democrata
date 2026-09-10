@@ -11,7 +11,6 @@ import {
 } from 'lucide-react';
 import { BeerRecipe, BrewSession, RecipeCalculations } from '../types/brewing';
 import { HeroBeerStage } from './HeroBeerStage';
-import breweryScene from '../assets/images/brewmaster_cinematic_1787487688648.jpg';
 
 interface BrewDeskHomeProps {
   currentRecipe: BeerRecipe;
@@ -92,6 +91,9 @@ export const BrewDeskHome: React.FC<BrewDeskHomeProps> = ({
   const styleSummary = outsideStyle.length === 0
     ? 'Todas as medidas previstas estão nas faixas do estilo.'
     : outsideStyle.map((measure) => `${measure.label} ${STATUS_LABEL[measure.status]}`).join(' · ');
+  const heroSummary = outsideStyle.length === 0
+    ? `Receita de ${currentRecipe.batchSizeLiters} L com os parâmetros previstos dentro das faixas BJCP do estilo.`
+    : `Receita de ${currentRecipe.batchSizeLiters} L com ${outsideStyle.length} ${outsideStyle.length === 1 ? 'parâmetro que pede' : 'parâmetros que pedem'} revisão antes da brassagem.`;
   const nextAction = firstOutside
     ? {
         title: `Revise ${firstOutside.label} antes da brassagem`,
@@ -118,14 +120,19 @@ export const BrewDeskHome: React.FC<BrewDeskHomeProps> = ({
   return (
     <div className="brew-desk">
       <section className="brew-desk-hero" aria-labelledby="current-recipe-title">
-        <img src={breweryScene} alt="" className="brew-desk-hero__scene" />
+        <img
+          src="/brewmaster.jpg"
+          alt=""
+          className="brew-desk-hero__scene"
+          style={{ objectPosition: '58% 32%' }}
+        />
         <div className="brew-desk-hero__shade" />
         <div className="brew-desk-hero__content">
           <div className="brew-desk-hero__copy">
             <p className="brew-kicker"><span>01</span> Receita atual</p>
             <p className="brew-desk-hero__style">{currentRecipe.style.code} · {currentRecipe.style.name}</p>
             <h1 id="current-recipe-title">{currentRecipe.name}</h1>
-            <p className="brew-desk-hero__tagline">{currentRecipe.tagline}</p>
+            <p className="brew-desk-hero__tagline">{heroSummary}</p>
 
             <div className="brew-desk-hero__actions">
               <button type="button" className="brew-button brew-button--copper" onClick={onStartBrewday}>
@@ -269,4 +276,3 @@ export const BrewDeskHome: React.FC<BrewDeskHomeProps> = ({
     </div>
   );
 };
-
