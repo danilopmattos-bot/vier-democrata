@@ -3,8 +3,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import './index.css';
-import './cleanroom/brewbook.css';
-import './cleanroom/accessibility.css';
+import './brutal/brutal.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

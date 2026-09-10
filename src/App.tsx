@@ -1,12 +1,6 @@
 import React from 'react';
-import BrewbookApp from './cleanroom/BrewbookApp';
-import CleanroomTools from './cleanroom/CleanroomTools';
+import BrewbookBrutalApp from './brutal/BrewbookBrutalApp';
 
-export const App: React.FC = () => (
-  <>
-    <BrewbookApp />
-    <CleanroomTools />
-  </>
-);
+export const App: React.FC = () => <BrewbookBrutalApp />;
 
 export default App;
