@@ -7,7 +7,9 @@ import {
   Droplets,
   FileText,
   Flame,
+  FlaskConical,
   Home,
+  LibraryBig,
   Menu,
   Palette,
   Plus,
@@ -18,7 +20,7 @@ import {
 import { BeerRecipe } from '../types/brewing';
 import { DemocrataLogo } from './DemocrataLogo';
 
-export type AppTab = 'home' | 'architect' | 'water' | 'cockpit' | 'diagnostic' | 'labels' | 'sheet';
+export type AppTab = 'home' | 'architect' | 'styles' | 'water' | 'cockpit' | 'fermentation' | 'diagnostic' | 'labels' | 'sheet';
 
 interface AppShellProps {
   children: ReactNode;
@@ -43,6 +45,7 @@ const PRIMARY_NAV: Array<{
   { id: 'home', label: 'Bancada', shortLabel: 'Início', icon: Home },
   { id: 'architect', label: 'Receita', shortLabel: 'Receita', icon: BookOpen },
   { id: 'cockpit', label: 'Brassagem', shortLabel: 'Brassar', icon: Flame },
+  { id: 'fermentation', label: 'Fermentação', shortLabel: 'Fermentar', icon: FlaskConical },
   { id: 'water', label: 'Água', shortLabel: 'Água', icon: Droplets },
 ];
 
@@ -52,7 +55,8 @@ const SECONDARY_NAV: Array<{
   description: string;
   icon: React.ComponentType<{ className?: string }>;
 }> = [
-  { id: 'diagnostic', label: 'Problemas', description: 'Consultar defeitos da cerveja', icon: Wrench },
+  { id: 'styles', label: 'Atlas BJCP', description: 'Explorar e comparar estilos 2021', icon: LibraryBig },
+  { id: 'diagnostic', label: 'Problemas', description: 'Diagnóstico prático de defeitos', icon: Wrench },
   { id: 'labels', label: 'Rótulo', description: 'Abrir o estúdio de rótulos', icon: Palette },
   { id: 'sheet', label: 'Ficha da receita', description: 'Visualizar e imprimir', icon: FileText },
 ];
@@ -91,7 +95,7 @@ export const AppShell: React.FC<AppShellProps> = ({
             </span>
           </button>
 
-          <nav className="v4-primary-nav" aria-label="Áreas principais">
+          <nav className="v4-primary-nav" aria-label="Fluxo principal da cerveja">
             {PRIMARY_NAV.map((item) => {
               const Icon = item.icon;
               const selected = activeTab === item.id;
